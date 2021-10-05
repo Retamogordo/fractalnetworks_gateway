@@ -10,7 +10,7 @@ use std::str::FromStr;
 pub struct NetworkState {
     #[serde(with = "crate::wireguard::from_str")]
     pub private_key: WireguardPrivkey,
-    pub port: u16,
+    pub listen_port: u16,
     pub peers: Vec<PeerState>,
 }
 
@@ -20,9 +20,9 @@ pub struct PeerState {
     pub preshared_key: WireguardSecret,
     #[serde(with = "crate::wireguard::from_str")]
     pub public_key: WireguardPubkey,
-    pub allowed_ip: IpAddr,
-    pub endpoint: IpAddr,
-    pub port: u16,
+    #[serde(with = "serde_with::rust::seq_display_fromstr")]
+    pub allowed_ips: Vec<IpNet>,
+    pub endpoint: SocketAddr,
 }
 
 impl NetworkState {
@@ -30,7 +30,7 @@ impl NetworkState {
         let mut config = String::new();
         use std::fmt::Write;
         writeln!(config, "[Interface]").unwrap();
-        writeln!(config, "ListenPort = {}", self.port).unwrap();
+        writeln!(config, "ListenPort = {}", self.listen_port).unwrap();
         writeln!(config, "PrivateKey = {}", self.private_key.to_string()).unwrap();
 
         for peer in &self.peers {
@@ -46,8 +46,8 @@ impl PeerState {
         use std::fmt::Write;
         writeln!(config, "[Peer]").unwrap();
         writeln!(config, "PublicKey = {}", self.public_key.to_string()).unwrap();
-        writeln!(config, "AllowedIPs = {}", self.allowed_ip).unwrap();
-        writeln!(config, "Endpoint = {}:{}", self.endpoint, self.port).unwrap();
+        //writeln!(config, "AllowedIPs = {}", self.allowed_ips).unwrap();
+        writeln!(config, "Endpoint = {}", self.endpoint).unwrap();
         config
     }
 }
@@ -128,4 +128,10 @@ impl FromStr for PeerStats {
             },
         })
     }
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct NetnsItem {
+    pub name: String,
+    pub id: Option<usize>,
 }

@@ -30,6 +30,20 @@ pub async fn netns_write_file(netns: &str, filename: &Path, data: &str) -> Resul
     Ok(())
 }
 
+pub async fn netns_list() -> Result<Vec<NetnsItem>> {
+    let output = Command::new("/usr/sbin/ip")
+        .arg("--json")
+        .arg("netns")
+        .arg("list")
+        .output().await?;
+    if !output.status.success() {
+        return Err(anyhow!("Error fetching wireguard stats"));
+    }
+    let output = String::from_utf8(output.stdout)?;
+    let items: Vec<NetnsItem> = serde_json::from_str(&output)?;
+    Ok(items)
+}
+
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     if !Command::new("/usr/sbin/ip")
         .arg("link")
