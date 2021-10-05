@@ -3,6 +3,7 @@ use crate::util::*;
 use anyhow::Result;
 use std::path::Path;
 use std::time::Duration;
+use std::collections::HashSet;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 
@@ -30,6 +31,31 @@ pub async fn create(network: &NetworkState) -> Result<String> {
     let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
 
     Ok(pubkey)
+}
+
+pub async fn apply(state: &[NetworkState]) -> Result<String> {
+    let netns_list: HashSet<String> = netns_list().await?
+        .into_iter()
+        .map(|netns| netns.name)
+        .collect();
+    let netns_expected: HashSet<String> = state
+        .iter()
+        .map(|network| network.netns_name())
+        .collect();
+    for netns in netns_list.difference(&netns_expected) {
+        netns_del(&netns).await?;
+    }
+    for network in state {
+        if !netns_list.contains(&network.netns_name()) {
+            create(network).await?;
+        }
+        apply_network(network).await?;
+    }
+    Ok("okay".to_string())
+}
+
+pub async fn apply_network(state: &NetworkState) -> Result<()> {
+    Ok(())
 }
 
 pub async fn watchdog(duration: Duration) -> Result<()> {

@@ -5,19 +5,22 @@ use rocket::serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
+use std::collections::HashMap;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct NetworkState {
     #[serde(with = "crate::wireguard::from_str")]
     pub private_key: WireguardPrivkey,
+    #[serde(default)]
     pub listen_port: u16,
     pub peers: Vec<PeerState>,
+    pub proxy: HashMap<String, Vec<SocketAddr>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct PeerState {
-    #[serde(with = "crate::wireguard::from_str")]
-    pub preshared_key: WireguardSecret,
+    //#[serde(with = "crate::wireguard::from_str")]
+    //pub preshared_key: WireguardSecret,
     #[serde(with = "crate::wireguard::from_str")]
     pub public_key: WireguardPubkey,
     #[serde(with = "serde_with::rust::seq_display_fromstr")]
@@ -37,6 +40,10 @@ impl NetworkState {
             writeln!(config, "\n{}", peer.to_config()).unwrap();
         }
         config
+    }
+
+    pub fn netns_name(&self) -> String {
+        format!("node-{}", self.listen_port)
     }
 }
 
@@ -114,10 +121,14 @@ impl FromStr for PeerStats {
                 Some(WireguardSecret::from_str(components[1])?)
             },
             endpoint: components[2].parse()?,
-            allowed_ips: components[3]
-                .split(',')
-                .map(|ipnet| ipnet.parse())
-                .collect::<Result<Vec<_>, _>>()?,
+            allowed_ips: if components[3] == "(none)" {
+                vec![]
+            } else {
+                components[3]
+                    .split(',')
+                    .map(|ipnet| ipnet.parse())
+                    .collect::<Result<Vec<_>, _>>()?
+            },
             latest_handshake: components[4].parse()?,
             transfer_rx: components[5].parse()?,
             transfer_tx: components[6].parse()?,

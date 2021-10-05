@@ -18,6 +18,20 @@ pub async fn netns_add(name: &str) -> Result<()> {
     }
 }
 
+pub async fn netns_del(name: &str) -> Result<()> {
+    let success = Command::new("/usr/sbin/ip")
+        .arg("netns")
+        .arg("del")
+        .arg(name)
+        .status()
+        .await?
+        .success();
+    match success {
+        true => Ok(()),
+        false => Err(anyhow!("Error deleting netns")),
+    }
+}
+
 pub async fn netns_write_file(netns: &str, filename: &Path, data: &str) -> Result<()> {
     let mut path = PathBuf::from("/etc/netns");
     path.push(netns);
