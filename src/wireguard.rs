@@ -287,7 +287,7 @@ impl ToString for WireguardPrivkey {
 pub mod from_str {
     use serde::{Deserialize, Deserializer};
     use std::str::FromStr;
-    pub fn deserialize<'de, 'a, T, D>(deserializer: D) -> Result<T, D::Error>
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
         T: FromStr,
