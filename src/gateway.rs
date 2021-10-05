@@ -3,6 +3,8 @@ use crate::util::*;
 use anyhow::Result;
 use std::path::Path;
 
+const WIREGUARD_INTERFACE: &'static str = "ens0";
+
 pub async fn create(network: &NetworkState) -> Result<String> {
     let pubkey = network.private_key.pubkey().to_string();
     let netns = format!("node-{}", network.port);
@@ -13,16 +15,19 @@ pub async fn create(network: &NetworkState) -> Result<String> {
     // write wireguard config
     netns_write_file(
         &netns,
-        Path::new("wireguard/wg0.conf"),
+        Path::new("wireguard/ens0.conf"),
         &network.to_config(),
     )
     .await?;
 
     // create wireguard config in netns
-    wireguard_create(&netns, "wg0").await?;
+    wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
 
     // sync config of wireguard netns
-    wireguard_syncconf(&netns, "wg0").await?;
+    wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
+
+    let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
+    println!("{:#?}", stats);
 
     Ok(pubkey)
 }

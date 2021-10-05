@@ -1,6 +1,10 @@
 use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
+use anyhow::anyhow;
+use ipnet::IpNet;
 use rocket::serde::{Deserialize, Serialize};
 use std::net::IpAddr;
+use std::net::SocketAddr;
+use std::str::FromStr;
 
 #[derive(Deserialize)]
 pub struct NetworkState {
@@ -45,5 +49,80 @@ impl PeerState {
         writeln!(config, "AllowedIPs = {}", self.allowed_ip).unwrap();
         writeln!(config, "Endpoint = {}:{}", self.endpoint, self.port).unwrap();
         config
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct NetworkStats {
+    private_key: WireguardPrivkey,
+    public_key: WireguardPubkey,
+    listen_port: u16,
+    fwmark: Option<u16>,
+    peers: Vec<PeerStats>,
+}
+
+impl FromStr for NetworkStats {
+    type Err = anyhow::Error;
+    fn from_str(output: &str) -> Result<Self, Self::Err> {
+        let mut lines = output.lines();
+        let network_stats = lines.next().ok_or(anyhow!("Missing network line"))?;
+        let components: Vec<&str> = network_stats.split('\t').collect();
+        if components.len() != 4 {
+            println!("{:?}", components);
+            return Err(anyhow!("Wrong network stats line len"));
+        }
+        Ok(NetworkStats {
+            private_key: WireguardPrivkey::from_str(components[0])?,
+            public_key: WireguardPubkey::from_str(components[1])?,
+            listen_port: components[2].parse()?,
+            fwmark: if components[3] == "off" {
+                None
+            } else {
+                Some(components[3].parse()?)
+            },
+            peers: lines
+                .map(|line| PeerStats::from_str(line))
+                .collect::<Result<Vec<_>, _>>()?,
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PeerStats {
+    public_key: WireguardPubkey,
+    preshared_key: Option<WireguardSecret>,
+    endpoint: SocketAddr,
+    allowed_ips: Vec<IpNet>,
+    latest_handshake: usize,
+    transfer_rx: usize,
+    transfer_tx: usize,
+    persistent_keepalive: Option<usize>,
+}
+
+impl FromStr for PeerStats {
+    type Err = anyhow::Error;
+    fn from_str(output: &str) -> Result<Self, Self::Err> {
+        let components: Vec<&str> = output.split('\t').collect();
+        if components.len() != 8 {
+            return Err(anyhow!("Wrong network stats line len"));
+        }
+        Ok(PeerStats {
+            public_key: WireguardPubkey::from_str(components[0])?,
+            preshared_key: if components[1] == "(none)" {
+                None
+            } else {
+                Some(WireguardSecret::from_str(components[1])?)
+            },
+            endpoint: components[2].parse()?,
+            allowed_ips: components[3].split(',').map(|ipnet| ipnet.parse()).collect::<Result<Vec<_>, _>>()?,
+            latest_handshake: components[4].parse()?,
+            transfer_rx: components[5].parse()?,
+            transfer_tx: components[6].parse()?,
+            persistent_keepalive: if components[7] == "off" {
+                None
+            } else {
+                Some(components[4].parse()?)
+            },
+        })
     }
 }
