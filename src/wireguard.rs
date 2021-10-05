@@ -1,10 +1,10 @@
-use rand_core::OsRng;
-use serde::{Serialize, Deserialize};
 use anyhow::Result;
-use x25519_dalek_fiat::{PublicKey, StaticSecret};
-use thiserror::Error;
+use rand_core::OsRng;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::string::ToString;
+use thiserror::Error;
+use x25519_dalek_fiat::{PublicKey, StaticSecret};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct WireguardPubkey([u8; 32]);
@@ -285,18 +285,15 @@ impl ToString for WireguardPrivkey {
 }
 
 pub mod from_str {
-    use std::str::FromStr;
     use serde::{Deserialize, Deserializer};
-    pub fn deserialize<'de, 'a, T, D>(
-        deserializer: D
-    ) -> Result<T, D::Error>
+    use std::str::FromStr;
+    pub fn deserialize<'de, 'a, T, D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
         T: FromStr,
         <T as FromStr>::Err: std::error::Error,
     {
         let s: String = String::deserialize(deserializer)?;
-        T::from_str(s.as_str())
-            .map_err(serde::de::Error::custom)
+        T::from_str(s.as_str()).map_err(serde::de::Error::custom)
     }
 }

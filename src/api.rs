@@ -1,7 +1,7 @@
-use rocket::*;
-use rocket::serde::json::Json;
 use crate::gateway;
 use crate::types::*;
+use rocket::serde::json::Json;
+use rocket::*;
 
 #[post("/networks/create", data = "<data>")]
 async fn networks_create(data: Json<NetworkState>) -> String {
@@ -21,4 +21,3 @@ async fn network_get(public_key: &str) -> &'static str {
 pub fn routes() -> Vec<rocket::Route> {
     routes![networks, networks_create, network_get]
 }
-

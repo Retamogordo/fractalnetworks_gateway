@@ -1,13 +1,14 @@
 use anyhow::{anyhow, Result};
-use tokio::process::Command;
 use std::path::{Path, PathBuf};
+use tokio::process::Command;
 
 pub async fn netns_add(name: &str) -> Result<()> {
     let success = Command::new("/usr/sbin/ip")
         .arg("netns")
         .arg("add")
         .arg(name)
-        .status().await?
+        .status()
+        .await?
         .success();
     match success {
         true => Ok(()),
@@ -35,8 +36,10 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
         .arg(name)
         .arg("type")
         .arg("wireguard")
-        .status().await?
-        .success() {
+        .status()
+        .await?
+        .success()
+    {
         return Err(anyhow!("Error creating wireguard interface"));
     }
     if !Command::new("/usr/sbin/ip")
@@ -45,8 +48,10 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
         .arg(name)
         .arg("netns")
         .arg(netns)
-        .status().await?
-        .success() {
+        .status()
+        .await?
+        .success()
+    {
         return Err(anyhow!("Error moving wireguard interface"));
     }
     Ok(())
@@ -61,10 +66,11 @@ pub async fn wireguard_syncconf(netns: &str, name: &str) -> Result<()> {
         .arg("syncconf")
         .arg(name)
         .arg(format!("/etc/wireguard/{}.conf", name))
-        .status().await?
-        .success() {
+        .status()
+        .await?
+        .success()
+    {
         return Err(anyhow!("Error syncronizing wireguard config"));
     }
     Ok(())
 }
-

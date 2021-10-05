@@ -1,6 +1,6 @@
-use std::net::IpAddr;
-use rocket::serde::{Deserialize, Serialize};
 use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
+use rocket::serde::{Deserialize, Serialize};
+use std::net::IpAddr;
 
 #[derive(Deserialize)]
 pub struct NetworkState {

@@ -1,8 +1,8 @@
+mod api;
+mod gateway;
 mod types;
 mod util;
-mod api;
 pub mod wireguard;
-mod gateway;
 
 use anyhow::Result;
 
