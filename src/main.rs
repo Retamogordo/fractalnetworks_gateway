@@ -2,6 +2,7 @@
 extern crate rocket;
 use anyhow::Result;
 
+mod util;
 mod api;
 mod wireguard;
 mod gateway;
