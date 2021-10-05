@@ -1,8 +1,8 @@
+use crate::types::*;
 use anyhow::{anyhow, Result};
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
-use crate::types::*;
 use std::str::FromStr;
+use tokio::process::Command;
 
 pub async fn netns_add(name: &str) -> Result<()> {
     let success = Command::new("/usr/sbin/ip")
@@ -86,7 +86,8 @@ pub async fn wireguard_stats(netns: &str, name: &str) -> Result<NetworkStats> {
         .arg("show")
         .arg(name)
         .arg("dump")
-        .output().await?;
+        .output()
+        .await?;
     if !result.status.success() {
         return Err(anyhow!("Error fetching wireguard stats"));
     }

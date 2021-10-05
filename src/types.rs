@@ -114,7 +114,10 @@ impl FromStr for PeerStats {
                 Some(WireguardSecret::from_str(components[1])?)
             },
             endpoint: components[2].parse()?,
-            allowed_ips: components[3].split(',').map(|ipnet| ipnet.parse()).collect::<Result<Vec<_>, _>>()?,
+            allowed_ips: components[3]
+                .split(',')
+                .map(|ipnet| ipnet.parse())
+                .collect::<Result<Vec<_>, _>>()?,
             latest_handshake: components[4].parse()?,
             transfer_rx: components[5].parse()?,
             transfer_tx: components[6].parse()?,
