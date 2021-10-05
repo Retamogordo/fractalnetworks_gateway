@@ -1,0 +1,17 @@
+[package]
+name = "gateway"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
+wireguard-control = "1.5.0"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+hyper = "0.14.4"
+routerify = "2.0.0"
+anyhow = "1.0.38"
+base64 = "0.13.0"
+rand_core = "0.6.2"
+x25519-dalek-fiat = "0.1.0"
+thiserror = "1.0.24"
