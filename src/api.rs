@@ -14,23 +14,6 @@ pub struct NetworkCreate {
     pub peers: Vec<PeerState>,
 }
 
-impl NetworkCreate {
-    pub fn to_config(&self) -> String {
-        let mut config = String::new();
-        use std::fmt::Write;
-        writeln!(config, "[Interface]").unwrap();
-        //writeln!(config, "Address = 10.0.0.1/24").unwrap();
-        writeln!(config, "ListenPort = {}", self.port).unwrap();
-        writeln!(config, "PrivateKey = {}", self.private_key.to_string()).unwrap();
-        //writeln!(config, "MTU = {}", 1420).unwrap();
-
-        for peer in &self.peers {
-            writeln!(config, "\n{}", peer.to_config()).unwrap();
-        }
-        config
-    }
-}
-
 #[derive(Deserialize)]
 pub struct PeerState {
     #[serde(with = "crate::wireguard::from_str")]
@@ -40,18 +23,6 @@ pub struct PeerState {
     pub allowed_ip: IpAddr,
     pub endpoint: IpAddr,
     pub port: u16,
-}
-
-impl PeerState {
-    pub fn to_config(&self) -> String {
-        let mut config = String::new();
-        use std::fmt::Write;
-        writeln!(config, "[Peer]").unwrap();
-        writeln!(config, "PublicKey = {}", self.public_key.to_string()).unwrap();
-        writeln!(config, "AllowedIPs = {}", self.allowed_ip).unwrap();
-        writeln!(config, "Endpoint = {}:{}", self.endpoint, self.port).unwrap();
-        config
-    }
 }
 
 #[post("/networks/create", data = "<data>")]
@@ -73,3 +44,29 @@ pub fn routes() -> Vec<rocket::Route> {
     routes![networks, networks_create, network_get]
 }
 
+impl NetworkCreate {
+    pub fn to_config(&self) -> String {
+        let mut config = String::new();
+        use std::fmt::Write;
+        writeln!(config, "[Interface]").unwrap();
+        writeln!(config, "ListenPort = {}", self.port).unwrap();
+        writeln!(config, "PrivateKey = {}", self.private_key.to_string()).unwrap();
+
+        for peer in &self.peers {
+            writeln!(config, "\n{}", peer.to_config()).unwrap();
+        }
+        config
+    }
+}
+
+impl PeerState {
+    pub fn to_config(&self) -> String {
+        let mut config = String::new();
+        use std::fmt::Write;
+        writeln!(config, "[Peer]").unwrap();
+        writeln!(config, "PublicKey = {}", self.public_key.to_string()).unwrap();
+        writeln!(config, "AllowedIPs = {}", self.allowed_ip).unwrap();
+        writeln!(config, "Endpoint = {}:{}", self.endpoint, self.port).unwrap();
+        config
+    }
+}
