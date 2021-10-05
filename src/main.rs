@@ -1,16 +1,10 @@
-#[macro_use]
-extern crate rocket;
-use anyhow::Result;
-
+mod types;
 mod util;
 mod api;
-mod wireguard;
+pub mod wireguard;
 mod gateway;
 
-#[get("/networks")]
-async fn networks() -> &'static str {
-    "Hello, world"
-}
+use anyhow::Result;
 
 #[rocket::main]
 async fn main() -> Result<()> {

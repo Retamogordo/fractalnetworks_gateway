@@ -1,10 +1,9 @@
-use crate::api::NetworkCreate;
-use anyhow::{anyhow, Result};
-use tokio::process::Command;
-use std::path::{Path, PathBuf};
+use crate::types::NetworkState;
+use anyhow::Result;
+use std::path::Path;
 use crate::util::*;
 
-pub async fn create(network: &NetworkCreate) -> Result<String> {
+pub async fn create(network: &NetworkState) -> Result<String> {
     let pubkey = network.private_key.pubkey().to_string();
     // create netns
     netns_add("node-1").await?;
