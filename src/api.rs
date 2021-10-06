@@ -28,5 +28,5 @@ async fn network_get(public_key: &str) -> &'static str {
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![networks, networks_create, network_get, apply]
+    routes![networks, network_get, apply]
 }

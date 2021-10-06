@@ -1,4 +1,4 @@
-use crate::types::NetworkState;
+use crate::types::*;
 use crate::util::*;
 use anyhow::Result;
 use std::collections::HashSet;
@@ -41,26 +41,36 @@ pub async fn create(network: &NetworkState) -> Result<String> {
 }
 
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
+    // find out which netns exist right now
     let netns_list: HashSet<String> = netns_list()
         .await?
         .into_iter()
         .map(|netns| netns.name)
         .collect();
+
+    // find out which we are expecting to exist
     let netns_expected: HashSet<String> =
         state.iter().map(|network| network.netns_name()).collect();
+
+    // ones that exist but shouldn't, we delete them.
     for netns in netns_list.difference(&netns_expected) {
-        netns_del(&netns).await?;
+        if netns.starts_with(NETNS_PREFIX) {
+            netns_del(&netns).await?;
+        }
     }
+
+    // for the rest, apply config
     for network in state {
         if !netns_list.contains(&network.netns_name()) {
             create(network).await?;
         }
-        apply_network(network).await?;
+        let create = netns_list.contains(&network.netns_name());
+        apply_network(network, create).await?;
     }
     Ok("okay".to_string())
 }
 
-pub async fn apply_network(state: &NetworkState) -> Result<()> {
+pub async fn apply_network(state: &NetworkState, create: bool) -> Result<()> {
     Ok(())
 }
 

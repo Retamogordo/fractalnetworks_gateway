@@ -7,6 +7,9 @@ use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
+pub const NETNS_PREFIX: &'static str = "network-";
+pub const VETH_PREFIX: &'static str = "veth";
+
 #[derive(Deserialize, Clone, Debug)]
 pub struct NetworkState {
     #[serde(with = "crate::wireguard::from_str")]
@@ -45,11 +48,11 @@ impl NetworkState {
     }
 
     pub fn netns_name(&self) -> String {
-        format!("node-{}", self.listen_port)
+        format!("{}{}", NETNS_PREFIX, self.listen_port)
     }
 
     pub fn veth_name(&self) -> String {
-        format!("veth{}", self.listen_port)
+        format!("{}{}", VETH_PREFIX, self.listen_port)
     }
 }
 
