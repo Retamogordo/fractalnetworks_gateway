@@ -533,6 +533,7 @@ dependencies = [
  "base64",
  "env_logger",
  "ipnet",
+ "log",
  "rand_core",
  "rocket",
  "rusqlite",

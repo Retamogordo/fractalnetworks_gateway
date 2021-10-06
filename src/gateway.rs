@@ -4,12 +4,13 @@ use anyhow::Result;
 use std::collections::HashSet;
 use std::path::Path;
 use std::time::Duration;
+use log::*;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 
 pub async fn create(network: &NetworkState) -> Result<String> {
     let pubkey = network.private_key.pubkey().to_string();
-    let netns = format!("node-{}", network.listen_port);
+    let netns = network.netns_name();
 
     // create netns
     netns_add(&netns).await?;
@@ -41,6 +42,8 @@ pub async fn create(network: &NetworkState) -> Result<String> {
 }
 
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
+    info!("Applying new state");
+
     // find out which netns exist right now
     let netns_list: HashSet<String> = netns_list()
         .await?
@@ -87,7 +90,7 @@ pub async fn watchdog_run() -> Result<()> {
     let netns_items = netns_list().await?;
     for netns in &netns_items {
         let stats = wireguard_stats(&netns.name, WIREGUARD_INTERFACE).await?;
-        println!("{}: {:?}", &netns.name, stats);
+        info!("{}: {:?}", &netns.name, stats);
     }
     Ok(())
 }

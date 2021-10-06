@@ -3,8 +3,10 @@ use anyhow::{anyhow, Result};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tokio::process::Command;
+use log::*;
 
 pub async fn netns_add(name: &str) -> Result<()> {
+    info!("netns add {}", name);
     let success = Command::new("/usr/sbin/ip")
         .arg("netns")
         .arg("add")
@@ -19,6 +21,7 @@ pub async fn netns_add(name: &str) -> Result<()> {
 }
 
 pub async fn netns_del(name: &str) -> Result<()> {
+    info!("netns del {}", name);
     let success = Command::new("/usr/sbin/ip")
         .arg("netns")
         .arg("del")
@@ -60,6 +63,7 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
 }
 
 pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
+    info!("addr add {}, {}, {}", netns, interface, addr);
     if !Command::new("/usr/sbin/ip")
         .arg("-n")
         .arg(netns)
@@ -78,6 +82,7 @@ pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
 }
 
 pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
+    info!("veth add {}, {}, {}", netns, outer, inner);
     if !Command::new("/usr/sbin/ip")
         .arg("link")
         .arg("add")
@@ -99,6 +104,7 @@ pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
 }
 
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
+    info!("wireguard create {}, {}", netns, name);
     if !Command::new("/usr/sbin/ip")
         .arg("link")
         .arg("add")
@@ -128,6 +134,7 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
 }
 
 pub async fn wireguard_syncconf(netns: &str, name: &str) -> Result<()> {
+    info!("wireguard syncconf {}, {}", netns, name);
     if !Command::new("/usr/sbin/ip")
         .arg("netns")
         .arg("exec")

@@ -37,5 +37,5 @@ while [[ $# -gt 0 ]]; do
 done
 
 for x in $(seq $NUMBER); do
-    curl -X POST -H "Content-Type: $CONTENT" -H "Token: $TOKEN" -d @$POSITIONAL "$SERVER/api/v1/apply"
+    curl -X POST -H "Content-Type: $CONTENT" -H "Token: $TOKEN" -d @$POSITIONAL "$SERVER/api/v1/config.json"
 done

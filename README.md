@@ -35,6 +35,8 @@ mechanism down the road).
 Performing a GET request against this endpoint returns the currently active
 configuration as a JSON document.
 
+The configuration does not change while the system is running.
+
 ## POST /api/v1/config.json
 
 Posting a configuration as a JSON document to this endpoint applies that
@@ -49,7 +51,9 @@ to apply it.
 ## GET /api/v1/status.json
 
 This endpoint returns a JSON file describing the current status, including
-the connected clients.
+the connected clients. This changes and can be polled to get visibility into
+what is going on. This endpoint also returns any errors or degraded state
+info.
 
 ## GET /api/v1/traffic.json?since=$timestamp
 
