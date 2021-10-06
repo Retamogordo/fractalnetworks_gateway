@@ -5,10 +5,10 @@ mod util;
 pub mod wireguard;
 
 use anyhow::Result;
+use sqlx::SqlitePool;
+use std::path::PathBuf;
 use std::time::Duration;
 use structopt::StructOpt;
-use std::path::PathBuf;
-use sqlx::SqlitePool;
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
@@ -27,9 +27,7 @@ async fn main() -> Result<()> {
 
     // connect and migrate database
     let pool = SqlitePool::connect(&options.database).await?;
-    sqlx::migrate!()
-        .run(&pool)
-        .await?;
+    sqlx::migrate!().run(&pool).await?;
 
     // launch watchdog, which after the interval will pull in traffic stats
     // and make sure that everything is running as it should.

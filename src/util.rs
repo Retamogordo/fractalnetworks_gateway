@@ -1,9 +1,12 @@
 use crate::types::*;
 use anyhow::{anyhow, Result};
+use log::*;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tokio::process::Command;
-use log::*;
+use rocket::serde::Deserialize;
+use std::net::{Ipv4Addr, IpAddr};
+use ipnet::{Ipv4Net, Ipv6Net, IpNet};
 
 pub async fn netns_add(name: &str) -> Result<()> {
     info!("netns add {}", name);
@@ -18,6 +21,18 @@ pub async fn netns_add(name: &str) -> Result<()> {
         true => Ok(()),
         false => Err(anyhow!("Error creating netns")),
     }
+}
+
+pub async fn netns_exists(name: &str) -> Result<bool> {
+    let success = Command::new("/usr/sbin/ip")
+        .arg("netns")
+        .arg("exec")
+        .arg(name)
+        .arg("/bin/true")
+        .status()
+        .await?
+        .success();
+    Ok(success)
 }
 
 pub async fn netns_del(name: &str) -> Result<()> {
@@ -81,6 +96,46 @@ pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
     Ok(())
 }
 
+#[derive(Deserialize, PartialEq, Debug)]
+struct IpInterfaceAddr {
+    addr_info: Vec<IpInterfaceAddrInfo>,
+}
+
+#[derive(Deserialize, PartialEq, Debug)]
+struct IpInterfaceAddrInfo {
+    local: IpAddr,
+    prefixlen: u8,
+}
+
+#[test]
+fn test_ip_addr() {
+    let test = r#"[{"ifindex":58,"ifname":"wg0","flags":["POINTOPOINT","NOARP","UP","LOWER_UP"],"mtu":1420,"qdisc":"noqueue","operstate":"UNKNOWN","group":"default","txqlen":1000,"link_type":"none","addr_info":[{"family":"inet","local":"10.80.69.7","prefixlen":24,"scope":"global","label":"wg0","valid_life_time":4294967295,"preferred_life_time":4294967295}]}]"#;
+    let output: Vec<IpInterfaceAddr> = serde_json::from_str(test).unwrap();
+    assert_eq!(output, vec![IpInterfaceAddr { addr_info: vec![IpInterfaceAddrInfo { local: IpAddr::V4(Ipv4Addr::new(10, 80, 69, 7)), prefixlen: 24 }], }]);
+}
+
+pub async fn addr_list(netns: &str, interface: &str) -> Result<Vec<IpNet>> {
+    let output = Command::new("/usr/sbin/ip")
+        .arg("--json")
+        .arg("-n")
+        .arg(netns)
+        .arg("addr")
+        .arg("show")
+        .arg("dev")
+        .arg(interface)
+        .output()
+        .await?;
+    if !output.status.success() {
+        return Err(anyhow!("Error fetching addr for {} in {}", interface, netns));
+    }
+    let output = String::from_utf8(output.stdout)?;
+    let items: Vec<IpInterfaceAddr> = serde_json::from_str(&output)?;
+    Ok(items.iter().map(|addr| addr.addr_info.iter().map(|info| match info.local {
+        IpAddr::V4(addr) => IpNet::V4(Ipv4Net::new(addr, info.prefixlen).unwrap()),
+        IpAddr::V6(addr) => IpNet::V6(Ipv6Net::new(addr, info.prefixlen).unwrap()),
+    })).flatten().collect())
+}
+
 pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
     info!("veth add {}, {}, {}", netns, outer, inner);
     if !Command::new("/usr/sbin/ip")
@@ -98,9 +153,28 @@ pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
         .await?
         .success()
     {
-        return Err(anyhow!("Error creating wireguard interface"));
+        return Err(anyhow!("Error creating veth interfaces {} and {} in {}", outer, inner, netns));
     }
     Ok(())
+}
+
+pub async fn veth_exists(netns: &str, name: &str) -> Result<bool> {
+    info!("veth_exists({}, {})", netns, name);
+    let output = Command::new("/usr/sbin/ip")
+        .arg("-n")
+        .arg(netns)
+        .arg("link")
+        .arg("show")
+        .arg(name)
+        .arg("type")
+        .arg("veth")
+        .output()
+        .await?;
+    if output.status.success() && output.stdout.len() > 0 {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
 
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
@@ -131,6 +205,25 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
         return Err(anyhow!("Error moving wireguard interface"));
     }
     Ok(())
+}
+
+pub async fn wireguard_exists(netns: &str, name: &str) -> Result<bool> {
+    info!("wireguard_exists({}, {})", netns, name);
+    let output = Command::new("/usr/sbin/ip")
+        .arg("-n")
+        .arg(netns)
+        .arg("link")
+        .arg("show")
+        .arg(name)
+        .arg("type")
+        .arg("wireguard")
+        .output()
+        .await?;
+    if output.status.success() && output.stdout.len() > 0 {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
 
 pub async fn wireguard_syncconf(netns: &str, name: &str) -> Result<()> {

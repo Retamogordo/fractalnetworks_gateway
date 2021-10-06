@@ -1,6 +1,7 @@
 use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
 use anyhow::anyhow;
 use ipnet::IpNet;
+use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::IpAddr;
@@ -30,7 +31,7 @@ pub struct PeerState {
     pub public_key: WireguardPubkey,
     #[serde(with = "serde_with::rust::seq_display_fromstr")]
     pub allowed_ips: Vec<IpNet>,
-    pub endpoint: SocketAddr,
+    pub endpoint: Option<SocketAddr>,
 }
 
 impl NetworkState {
@@ -62,8 +63,15 @@ impl PeerState {
         use std::fmt::Write;
         writeln!(config, "[Peer]").unwrap();
         writeln!(config, "PublicKey = {}", self.public_key.to_string()).unwrap();
-        //writeln!(config, "AllowedIPs = {}", self.allowed_ips).unwrap();
-        writeln!(config, "Endpoint = {}", self.endpoint).unwrap();
+        writeln!(
+            config,
+            "AllowedIPs = {}",
+            self.allowed_ips.iter().map(|ip| ip.to_string()).join(", ")
+        )
+        .unwrap();
+        if let Some(endpoint) = self.endpoint {
+            writeln!(config, "Endpoint = {}", endpoint).unwrap();
+        }
         config
     }
 }

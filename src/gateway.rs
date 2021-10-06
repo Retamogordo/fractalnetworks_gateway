@@ -1,45 +1,12 @@
 use crate::types::*;
 use crate::util::*;
 use anyhow::Result;
+use log::*;
 use std::collections::HashSet;
 use std::path::Path;
 use std::time::Duration;
-use log::*;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
-
-pub async fn create(network: &NetworkState) -> Result<String> {
-    let pubkey = network.private_key.pubkey().to_string();
-    let netns = network.netns_name();
-
-    // create netns
-    netns_add(&netns).await?;
-
-    // write wireguard config
-    netns_write_file(
-        &netns,
-        Path::new("wireguard/ens0.conf"),
-        &network.to_config(),
-    )
-    .await?;
-
-    // create wireguard config in netns
-    wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
-
-    // create veth pair
-    veth_add(&netns, &network.veth_name(), "veth0").await?;
-
-    for address in &network.address {
-        addr_add(&netns, WIREGUARD_INTERFACE, &address.to_string()).await?;
-    }
-
-    // sync config of wireguard netns
-    wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
-
-    let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
-
-    Ok(pubkey)
-}
 
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
     info!("Applying new state");
@@ -64,16 +31,51 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
 
     // for the rest, apply config
     for network in state {
-        if !netns_list.contains(&network.netns_name()) {
-            create(network).await?;
-        }
-        let create = netns_list.contains(&network.netns_name());
-        apply_network(network, create).await?;
+        apply_network(network).await?;
     }
     Ok("okay".to_string())
 }
 
-pub async fn apply_network(state: &NetworkState, create: bool) -> Result<()> {
+pub async fn apply_network(network: &NetworkState) -> Result<()> {
+    // make sure that netns exists
+    let netns = network.netns_name();
+    if !netns_exists(&netns).await? {
+        netns_add(&netns).await?;
+    }
+
+    // make sure that the wireguard interface works
+    if !wireguard_exists(&netns, WIREGUARD_INTERFACE).await? {
+        info!("Wireguard network does not exist");
+        // create wireguard config in netns
+        wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
+    }
+
+    // create veth pair
+    let veth_name = network.veth_name();
+    if !veth_exists(&netns, &veth_name).await? {
+        veth_add(&netns, &veth_name, &veth_name).await?;
+    }
+
+    // write wireguard config
+    netns_write_file(
+        &netns,
+        Path::new("wireguard/ens0.conf"),
+        &network.to_config(),
+    )
+    .await?;
+
+    let addresses = addr_list(&netns, WIREGUARD_INTERFACE).await?;
+    for address in &network.address {
+        if !addresses.contains(address) {
+            addr_add(&netns, WIREGUARD_INTERFACE, &address.to_string()).await?;
+        }
+    }
+
+    // sync config of wireguard netns
+    wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
+
+    let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
+
     Ok(())
 }
 
