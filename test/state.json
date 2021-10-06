@@ -1,6 +1,7 @@
 {
     "12312": {
         "private_key": "2PGDeXYynfKqJH4k0sUgKeRKpL4DUGGLTKnPjKViZFk=",
+        "address": ["10.0.0.1/16"],
         "peers": [
             {
                 "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",

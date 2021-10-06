@@ -59,6 +59,24 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     Ok(items)
 }
 
+pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
+    if !Command::new("/usr/sbin/ip")
+        .arg("-n")
+        .arg(netns)
+        .arg("addr")
+        .arg("add")
+        .arg(addr)
+        .arg("dev")
+        .arg(interface)
+        .status()
+        .await?
+        .success()
+    {
+        return Err(anyhow!("Error setting address"));
+    }
+    Ok(())
+}
+
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     if !Command::new("/usr/sbin/ip")
         .arg("link")

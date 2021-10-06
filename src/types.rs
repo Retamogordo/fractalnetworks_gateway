@@ -13,6 +13,8 @@ pub struct NetworkState {
     pub private_key: WireguardPrivkey,
     #[serde(default)]
     pub listen_port: u16,
+    #[serde(with = "serde_with::rust::seq_display_fromstr")]
+    pub address: Vec<IpNet>,
     pub peers: Vec<PeerState>,
     pub proxy: HashMap<String, Vec<SocketAddr>>,
 }
