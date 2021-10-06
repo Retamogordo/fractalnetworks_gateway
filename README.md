@@ -44,6 +44,50 @@ configuration. The configuration represents the entire visible state.
 This endpoint returns all traffic data that occured since the supplied timestamp.
 Note that traffic information may be deleted after 24 hours.
 
+# State
+
+The state is encoded as a JSON document. An example state is in `test/state.json`,
+looking like this:
+
+```json
+{
+    "12312": {
+        "private_key": "2PGDeXYynfKqJH4k0sUgKeRKpL4DUGGLTKnPjKViZFk=",
+        "address": ["10.0.0.1/16"],
+        "peers": [
+            {
+                "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",
+                "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
+                "endpoint": "170.24.12.42:41213",
+                "allowed_ips": ["10.0.0.1/32"]
+            },
+            {
+                "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",
+                "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
+                "endpoint": "170.24.12.42:41213",
+                "allowed_ips": ["10.0.0.1/32"]
+            },
+            {
+                "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",
+                "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
+                "endpoint": "170.24.12.42:41213",
+                "allowed_ips": ["10.0.0.1/32"]
+            }
+        ],
+        "proxy": {
+            "gitlab.mydomain.com": ["10.0.0.1:8000", "10.0.0.2:5000"],
+            "chat.mydomain.com": ["10.0.0.2:7000"]
+        }
+    }
+}
+```
+
+The state is essentially a map of ports (which represent the public-facing
+WireGuard UDP ports) to network configurations. Every network has a private
+key, an address, as well as a bunch of peers. Additionally, networks can have
+proxy configurations which forward HTTP and HTTPS traffic from the gateway's
+public internet connection to inside the WireGuard networks.
+
 # Implementation
 
 The code is written in Rust, using Rocket as the HTTP library, Tokio for the
@@ -64,4 +108,24 @@ The resulting static binary will be available in `target/release/gateway` after
 a successful build, which can be deployed to any machine. The binary is
 self-contained and needs no additional runtime data.
 
+## Running
+
+To run it, simply launch the executable with root privileges on a suitable
+Linux machine. To secure it, use the `--token` option to set a secret token
+that needs to be present in API calls. To allow it to record traffic stats,
+use the `--database` option with a path to a file that will be used to store
+traffic data. If no database path is set, traffic data will be stored in RAM
+and will not persist after restarts.
+
+Some configuration options can be passed as environment variables:
+
+- `ROCKET_PORT` controls which port the HTTP server listens to, by default 8000.
+- `ROCKET_ADDRESS` controls which address the server listens to, by default 127.0.0.1.
+- `RUST_LOG` controls how much logging information is output, set to `info` for
+  more detail. This can also be used to enable logging only for specific modules
+  or functions, for example setting it to `rocket=error,gateway=info` disables
+  verbose Rocket output, but still allows all logs from this crate's code.
+
 # License
+
+*TODO.*
