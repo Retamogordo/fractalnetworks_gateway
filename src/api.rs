@@ -4,11 +4,6 @@ use rocket::serde::json::Json;
 use rocket::*;
 use std::collections::BTreeMap;
 
-#[post("/networks/create", data = "<data>")]
-async fn networks_create(data: Json<NetworkState>) -> String {
-    gateway::create(&data).await.unwrap()
-}
-
 #[post("/apply", data = "<data>")]
 async fn apply(data: Json<BTreeMap<u16, NetworkState>>) -> String {
     let data: Vec<NetworkState> = data
