@@ -1,9 +1,9 @@
 use crate::types::NetworkState;
 use crate::util::*;
 use anyhow::Result;
+use std::collections::HashSet;
 use std::path::Path;
 use std::time::Duration;
-use std::collections::HashSet;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 
@@ -34,14 +34,13 @@ pub async fn create(network: &NetworkState) -> Result<String> {
 }
 
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
-    let netns_list: HashSet<String> = netns_list().await?
+    let netns_list: HashSet<String> = netns_list()
+        .await?
         .into_iter()
         .map(|netns| netns.name)
         .collect();
-    let netns_expected: HashSet<String> = state
-        .iter()
-        .map(|network| network.netns_name())
-        .collect();
+    let netns_expected: HashSet<String> =
+        state.iter().map(|network| network.netns_name()).collect();
     for netns in netns_list.difference(&netns_expected) {
         netns_del(&netns).await?;
     }

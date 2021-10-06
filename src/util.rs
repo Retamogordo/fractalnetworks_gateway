@@ -49,7 +49,8 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
         .arg("--json")
         .arg("netns")
         .arg("list")
-        .output().await?;
+        .output()
+        .await?;
     if !output.status.success() {
         return Err(anyhow!("Error fetching wireguard stats"));
     }

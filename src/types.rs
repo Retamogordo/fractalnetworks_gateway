@@ -2,10 +2,10 @@ use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
 use anyhow::anyhow;
 use ipnet::IpNet;
 use rocket::serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
-use std::collections::HashMap;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct NetworkState {

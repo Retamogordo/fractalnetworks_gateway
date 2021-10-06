@@ -11,7 +11,8 @@ async fn networks_create(data: Json<NetworkState>) -> String {
 
 #[post("/apply", data = "<data>")]
 async fn apply(data: Json<BTreeMap<u16, NetworkState>>) -> String {
-    let data: Vec<NetworkState> = data.iter()
+    let data: Vec<NetworkState> = data
+        .iter()
         .map(|(port, state)| {
             let mut state = state.clone();
             state.listen_port = *port;
