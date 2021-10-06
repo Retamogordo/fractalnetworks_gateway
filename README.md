@@ -30,12 +30,12 @@ The gateway offers a REST API that allows for configuring it. The API is
 authenticated with a static token (for now, we will add another authentication
 mechanism down the road).
 
-## GET /api/v1/config
+## GET /api/v1/config.json
 
 Performing a GET request against this endpoint returns the currently active
 configuration as a JSON document.
 
-## POST /api/v1/apply
+## POST /api/v1/config.json
 
 Posting a configuration as a JSON document to this endpoint applies that
 configuration. The configuration represents the entire visible state. 
@@ -46,7 +46,12 @@ to apply it.
 
 	./test/apply.sh test/state.json
 
-## GET /api/v1/traffic?since=$timestamp
+## GET /api/v1/status.json
+
+This endpoint returns a JSON file describing the current status, including
+the connected clients.
+
+## GET /api/v1/traffic.json?since=$timestamp
 
 This endpoint returns all traffic data that occured since the supplied timestamp.
 Note that traffic information may be deleted after 24 hours.

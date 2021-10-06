@@ -4,8 +4,8 @@ use rocket::serde::json::Json;
 use rocket::*;
 use std::collections::BTreeMap;
 
-#[post("/apply", data = "<data>")]
-async fn apply(data: Json<BTreeMap<u16, NetworkState>>) -> String {
+#[post("/config.json", data = "<data>")]
+async fn config_set(data: Json<BTreeMap<u16, NetworkState>>) -> String {
     let data: Vec<NetworkState> = data
         .iter()
         .map(|(port, state)| {
@@ -17,16 +17,21 @@ async fn apply(data: Json<BTreeMap<u16, NetworkState>>) -> String {
     gateway::apply(&data).await.unwrap()
 }
 
-#[get("/networks")]
-async fn networks() -> &'static str {
-    "Hello, world"
+#[get("/config.json")]
+async fn config_get() -> String {
+    "TODO".to_string()
 }
 
-#[get("/network/<public_key>")]
-async fn network_get(public_key: &str) -> &'static str {
-    "Network"
+#[get("/status.json")]
+async fn status() -> String {
+    "TODO".to_string()
+}
+
+#[get("/traffic.json")]
+async fn traffic() -> String {
+    "TODO".to_string()
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![networks, network_get, apply]
+    routes![status, config_get, config_set, traffic]
 }
