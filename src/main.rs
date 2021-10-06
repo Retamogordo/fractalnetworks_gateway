@@ -13,9 +13,11 @@ use sqlx::SqlitePool;
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
     #[structopt(long, short, default_value = ":memory:")]
+    /// What database file to use to log traffic data to.
     database: String,
     #[structopt(long, short)]
-    secret: String,
+    /// Security token used to authenticate API requests.
+    secret: Option<String>,
 }
 
 #[rocket::main]
