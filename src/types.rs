@@ -47,6 +47,10 @@ impl NetworkState {
     pub fn netns_name(&self) -> String {
         format!("node-{}", self.listen_port)
     }
+
+    pub fn veth_name(&self) -> String {
+        format!("veth{}", self.listen_port)
+    }
 }
 
 impl PeerState {

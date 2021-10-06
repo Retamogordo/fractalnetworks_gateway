@@ -25,6 +25,9 @@ pub async fn create(network: &NetworkState) -> Result<String> {
     // create wireguard config in netns
     wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
 
+    // create veth pair
+    veth_add(&netns, &network.veth_name(), "veth0").await?;
+
     for address in &network.address {
         addr_add(&netns, WIREGUARD_INTERFACE, &address.to_string()).await?;
     }

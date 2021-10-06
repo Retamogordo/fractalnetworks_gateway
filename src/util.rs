@@ -77,6 +77,27 @@ pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
     Ok(())
 }
 
+pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
+    if !Command::new("/usr/sbin/ip")
+        .arg("link")
+        .arg("add")
+        .arg("dev")
+        .arg(outer)
+        .arg("type")
+        .arg("veth")
+        .arg("peer")
+        .arg(inner)
+        .arg("netns")
+        .arg(netns)
+        .status()
+        .await?
+        .success()
+    {
+        return Err(anyhow!("Error creating wireguard interface"));
+    }
+    Ok(())
+}
+
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     if !Command::new("/usr/sbin/ip")
         .arg("link")
