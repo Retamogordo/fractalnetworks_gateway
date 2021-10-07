@@ -79,7 +79,7 @@ impl PeerState {
 #[derive(Clone, Debug)]
 pub struct NetworkStats {
     private_key: WireguardPrivkey,
-    public_key: WireguardPubkey,
+    pub public_key: WireguardPubkey,
     listen_port: u16,
     fwmark: Option<u16>,
     peers: Vec<PeerStats>,
@@ -109,17 +109,24 @@ impl FromStr for NetworkStats {
                 .collect::<Result<Vec<_>, _>>()?,
         })
     }
+
+}
+
+impl NetworkStats {
+    pub fn peers(&self) -> &[PeerStats] {
+        &self.peers
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct PeerStats {
-    public_key: WireguardPubkey,
+    pub public_key: WireguardPubkey,
     preshared_key: Option<WireguardSecret>,
     endpoint: SocketAddr,
     allowed_ips: Vec<IpNet>,
     latest_handshake: usize,
-    transfer_rx: usize,
-    transfer_tx: usize,
+    pub transfer_rx: usize,
+    pub transfer_tx: usize,
     persistent_keepalive: Option<usize>,
 }
 
@@ -155,6 +162,12 @@ impl FromStr for PeerStats {
                 Some(components[4].parse()?)
             },
         })
+    }
+}
+
+impl PeerStats {
+    pub fn transfer(&self) -> (usize, usize) {
+        (self.transfer_rx, self.transfer_tx)
     }
 }
 

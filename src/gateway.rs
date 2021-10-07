@@ -8,7 +8,7 @@ use std::time::Duration;
 use tokio::sync::RwLock;
 use std::sync::Arc;
 use std::collections::BTreeMap;
-use sqlx::SqlitePool;
+use sqlx::{query, query_as, SqlitePool};
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 
@@ -146,5 +146,24 @@ pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
 
 pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
     let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
+    for peer in stats.peers() {
+        watchdog_peer(pool, &stats, &peer).await?;
+    }
+    Ok(())
+}
+
+pub async fn watchdog_peer(pool: &SqlitePool, stats: &NetworkStats, peer: &PeerStats) -> Result<()> {
+    query(
+        "INSERT OR IGNORE INTO gateway_network(network_pubkey)
+            VALUES (?)")
+        .bind(stats.public_key.as_slice())
+        .execute(pool)
+        .await?;
+    query(
+        "INSERT OR IGNORE INTO gateway_device(device_pubkey)
+            VALUES (?)")
+        .bind(peer.public_key.as_slice())
+        .execute(pool)
+        .await?;
     Ok(())
 }
