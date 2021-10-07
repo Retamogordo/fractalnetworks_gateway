@@ -37,11 +37,25 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
 }
 
 pub async fn apply_network(network: &NetworkState) -> Result<()> {
-    // make sure that netns exists
+    apply_netns(network).await?;
+    apply_wireguard(network).await?;
+    apply_veth(network).await?;
+    apply_forwarding(network).await?;
+    Ok(())
+}
+
+pub async fn apply_netns(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
+
+    // make sure that netns exists
     if !netns_exists(&netns).await? {
         netns_add(&netns).await?;
     }
+    Ok(())
+}
+
+pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
+    let netns = network.netns_name();
 
     // make sure that the wireguard interface works
     if !wireguard_exists(&netns, WIREGUARD_INTERFACE).await? {
@@ -50,10 +64,8 @@ pub async fn apply_network(network: &NetworkState) -> Result<()> {
         wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
     }
 
-    // create veth pair
-    let veth_name = network.veth_name();
-    if !veth_exists(&netns, &veth_name).await? {
-        veth_add(&netns, &veth_name, &veth_name).await?;
+    if interface_down(Some(&netns), WIREGUARD_INTERFACE).await? {
+        interface_set_up(Some(&netns), WIREGUARD_INTERFACE).await?;
     }
 
     // write wireguard config
@@ -64,6 +76,7 @@ pub async fn apply_network(network: &NetworkState) -> Result<()> {
     )
     .await?;
 
+    // set wireguard interface addresses to allow kernel ingress traffic
     let addresses = addr_list(&netns, WIREGUARD_INTERFACE).await?;
     for address in &network.address {
         if !addresses.contains(address) {
@@ -74,8 +87,35 @@ pub async fn apply_network(network: &NetworkState) -> Result<()> {
     // sync config of wireguard netns
     wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
 
+    // fetch stats to make sure interface is really up
     let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
 
+    Ok(())
+}
+
+pub async fn apply_veth(network: &NetworkState) -> Result<()> {
+    let netns = network.netns_name();
+
+    // create veth pair
+    let veth_name = network.veth_name();
+    if !veth_exists(&netns, &veth_name).await? {
+        veth_add(&netns, &veth_name, &veth_name).await?;
+    }
+
+    // make sure inner veth is up
+    if interface_down(Some(&netns), &veth_name).await? {
+        interface_set_up(Some(&netns), &veth_name).await?;
+    }
+
+    // make sure outer veth is up
+    if interface_down(None, &veth_name).await? {
+        interface_set_up(None, &veth_name).await?;
+    }
+
+    Ok(())
+}
+
+pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 

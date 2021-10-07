@@ -96,6 +96,66 @@ pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct InterfaceShow {
+    ifindex: usize,
+    ifname: String,
+    mtu: Option<usize>,
+    operstate: String,
+}
+
+pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool> {
+    let mut command = Command::new("/usr/sbin/ip");
+    command.arg("--json");
+    if let Some(netns) = netns {
+        command
+            .arg("-n")
+            .arg(netns);
+    }
+    command
+        .arg("link")
+        .arg("show")
+        .arg("dev")
+        .arg(interface);
+    let output = command
+        .output()
+        .await?;
+    if !output.status.success() {
+        return Err(anyhow!("Error checking interface state"));
+    }
+    let output = String::from_utf8(output.stdout)?;
+    let items: Vec<InterfaceShow> = serde_json::from_str(&output)?;
+    if items.len() == 1 {
+        Ok(items[0].operstate == "DOWN")
+    } else {
+        Err(anyhow!("Did not return any interfaces"))
+    }
+}
+
+pub async fn interface_set_up(netns: Option<&str>, interface: &str) -> Result<()> {
+    info!("interface_up({:?}, {})", netns, interface);
+    let mut command = Command::new("/usr/sbin/ip");
+    if let Some(netns) = netns {
+        command
+            .arg("-n")
+            .arg(netns);
+    }
+    command
+        .arg("link")
+        .arg("set")
+        .arg(interface)
+        .arg("up");
+    if !command
+        .status()
+        .await?
+        .success()
+
+    {
+        return Err(anyhow!("Error setting interface up"));
+    }
+    Ok(())
+}
+
 #[derive(Deserialize, PartialEq, Debug)]
 struct IpInterfaceAddr {
     addr_info: Vec<IpInterfaceAddrInfo>,
