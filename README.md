@@ -123,9 +123,14 @@ install one with [Rustup][rustup], by running the installer and then running
 
     rustup toolchain install nightly
 
+Once rustup and the nightly toolchain is installed, you can let rustup know
+that it should use that toolchain for this repository by running
+
+    rustup override set nightly
+
 Once that is working, build the code for deployment by running
 
-    cargo +nightly build --release
+    cargo build --release
 
 The resulting static binary will be available in `target/release/gateway` after
 a successful build, which can be deployed to any machine. The binary is

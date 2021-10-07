@@ -14,12 +14,17 @@ use token::Token;
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
-    #[structopt(long, short, default_value = ":memory:")]
     /// What database file to use to log traffic data to.
+    #[structopt(long, short, default_value = ":memory:")]
     database: String,
-    #[structopt(long, short)]
+
     /// Security token used to authenticate API requests.
+    #[structopt(long, short)]
     secret: String,
+
+    /// Interval to run watchdog at.
+    #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration::parse::parse))]
+    watchdog: Duration,
 }
 
 #[rocket::main]
@@ -33,7 +38,7 @@ async fn main() -> Result<()> {
 
     // launch watchdog, which after the interval will pull in traffic stats
     // and make sure that everything is running as it should.
-    rocket::tokio::spawn(gateway::watchdog(pool.clone(), Duration::from_secs(60)));
+    rocket::tokio::spawn(gateway::watchdog(pool.clone(), options.watchdog));
 
     // launch REST API
     rocket::build()

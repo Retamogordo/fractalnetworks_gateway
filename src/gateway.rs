@@ -124,19 +124,27 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
 }
 
 pub async fn watchdog(pool: SqlitePool, duration: Duration) -> Result<()> {
+    info!("Launching watchdog every {}", duration.as_secs());
     let mut interval = tokio::time::interval(duration);
     loop {
         interval.tick().await;
-        watchdog_run().await?;
+        watchdog_run(&pool).await?;
     }
     Ok(())
 }
 
-pub async fn watchdog_run() -> Result<()> {
+pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
+    info!("Running watchdog");
     let netns_items = netns_list().await?;
     for netns in &netns_items {
-        let stats = wireguard_stats(&netns.name, WIREGUARD_INTERFACE).await?;
-        info!("{}: {:?}", &netns.name, stats);
+        if netns.name.starts_with(NETNS_PREFIX) {
+            watchdog_netns(pool, &netns.name).await?;
+        }
     }
+    Ok(())
+}
+
+pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
+    let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
     Ok(())
 }
