@@ -9,17 +9,23 @@ use tokio::sync::RwLock;
 use std::sync::Arc;
 use std::collections::BTreeMap;
 use sqlx::{query, query_as, SqlitePool};
-use ipnet::IpNet;
-use std::net::IpAddr;
+use ipnet::{IpNet, Ipv4Net};
+use std::net::{IpAddr, Ipv4Addr};
+use lazy_static::lazy_static;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
+lazy_static! {
+    static ref BRIDGE_NET: IpNet = IpNet::V4(Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 0), 16).unwrap());
+}
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
     info!("Applying new state");
-    apply_bridge(BRIDGE_INTERFACE).await
+
+    // set up bridge
+    apply_bridge(BRIDGE_INTERFACE, &vec![BRIDGE_NET.clone()]).await
         .context("Creating bridge interface")?;
 
     // find out which netns exist right now
@@ -48,10 +54,19 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     Ok("success".to_string())
 }
 
-pub async fn apply_bridge(name: &str) -> Result<()> {
+/// Make sure the bridge interface exists, is up and has a certain address
+/// set up.
+pub async fn apply_bridge(name: &str, addr: &[IpNet]) -> Result<()> {
     if !bridge_exists(None, BRIDGE_INTERFACE).await? {
         bridge_add(None, BRIDGE_INTERFACE).await?;
     }
+
+    apply_addr(None, BRIDGE_INTERFACE, &addr).await
+        .context("Setting up bridge interface")?;
+
+    apply_interface_up(None, BRIDGE_INTERFACE).await
+        .context("Bringing bridge interface up")?;
+
     Ok(())
 }
 

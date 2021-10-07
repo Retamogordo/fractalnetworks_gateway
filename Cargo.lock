@@ -534,6 +534,7 @@ dependencies = [
  "env_logger",
  "ipnet",
  "itertools",
+ "lazy_static",
  "log",
  "parse_duration",
  "rand_core",
