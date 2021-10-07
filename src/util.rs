@@ -82,11 +82,15 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     Ok(items)
 }
 
-pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
-    info!("addr add {}, {}, {}", netns, interface, addr);
-    if !Command::new("/usr/sbin/ip")
-        .arg("-n")
-        .arg(netns)
+pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Result<()> {
+    info!("addr add {:?}, {}, {}", netns, interface, addr);
+    let mut command = Command::new("/usr/sbin/ip");
+    if let Some(netns) = netns {
+        command
+            .arg("-n")
+            .arg(netns);
+    }
+    let success = command
         .arg("addr")
         .arg("add")
         .arg(addr)
@@ -94,8 +98,8 @@ pub async fn addr_add(netns: &str, interface: &str, addr: &str) -> Result<()> {
         .arg(interface)
         .status()
         .await?
-        .success()
-    {
+        .success();
+    if !success {
         return Err(anyhow!("Error setting address"));
     }
     Ok(())
@@ -179,11 +183,15 @@ fn test_ip_addr() {
     assert_eq!(output, vec![IpInterfaceAddr { addr_info: vec![IpInterfaceAddrInfo { local: IpAddr::V4(Ipv4Addr::new(10, 80, 69, 7)), prefixlen: 24 }], }]);
 }
 
-pub async fn addr_list(netns: &str, interface: &str) -> Result<Vec<IpNet>> {
-    let output = Command::new("/usr/sbin/ip")
-        .arg("--json")
-        .arg("-n")
-        .arg(netns)
+pub async fn addr_list(netns: Option<&str>, interface: &str) -> Result<Vec<IpNet>> {
+    let mut command = Command::new("/usr/sbin/ip");
+    command.arg("--json");
+    if let Some(netns) = netns {
+        command
+            .arg("-n")
+            .arg(netns);
+    }
+    let output = command
         .arg("addr")
         .arg("show")
         .arg("dev")
@@ -191,7 +199,7 @@ pub async fn addr_list(netns: &str, interface: &str) -> Result<Vec<IpNet>> {
         .output()
         .await?;
     if !output.status.success() {
-        return Err(anyhow!("Error fetching addr for {} in {}", interface, netns));
+        return Err(anyhow!("Error fetching addr for {} in {:?}", interface, netns));
     }
     let output = String::from_utf8(output.stdout)?;
     let items: Vec<IpInterfaceAddr> = serde_json::from_str(&output)?;

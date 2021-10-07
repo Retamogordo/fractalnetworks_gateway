@@ -4,7 +4,7 @@ use ipnet::IpNet;
 use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::net::SocketAddr;
 use std::str::FromStr;
 
@@ -54,6 +54,10 @@ impl NetworkState {
 
     pub fn veth_name(&self) -> String {
         format!("{}{}", VETH_PREFIX, self.listen_port)
+    }
+
+    pub fn veth_ipv4(&self) -> Ipv4Addr {
+        Ipv4Addr::new(172, 99, (self.listen_port / 256) as u8, (self.listen_port % 256) as u8)
     }
 }
 

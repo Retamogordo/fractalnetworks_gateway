@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::util::*;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::*;
 use std::collections::HashSet;
 use std::path::Path;
@@ -9,9 +9,13 @@ use tokio::sync::RwLock;
 use std::sync::Arc;
 use std::collections::BTreeMap;
 use sqlx::{query, query_as, SqlitePool};
+use ipnet::IpNet;
+use std::net::IpAddr;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 
+/// Given a new state, do whatever needs to be done to get the system in that
+/// state.
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
     info!("Applying new state");
 
@@ -37,7 +41,8 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     for network in state {
         apply_network(network).await?;
     }
-    Ok("okay".to_string())
+
+    Ok("success".to_string())
 }
 
 pub async fn apply_network(network: &NetworkState) -> Result<()> {
@@ -68,9 +73,8 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
         wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
     }
 
-    if interface_down(Some(&netns), WIREGUARD_INTERFACE).await? {
-        interface_set_up(Some(&netns), WIREGUARD_INTERFACE).await?;
-    }
+    apply_interface_up(Some(&netns), WIREGUARD_INTERFACE).await
+        .context("Setting wireguard interface UP")?;
 
     // write wireguard config
     netns_write_file(
@@ -81,12 +85,8 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     .await?;
 
     // set wireguard interface addresses to allow kernel ingress traffic
-    let addresses = addr_list(&netns, WIREGUARD_INTERFACE).await?;
-    for address in &network.address {
-        if !addresses.contains(address) {
-            addr_add(&netns, WIREGUARD_INTERFACE, &address.to_string()).await?;
-        }
-    }
+    apply_addr(Some(&netns), WIREGUARD_INTERFACE, &network.address).await
+        .context("Applying wireguard interface addresses")?;
 
     // sync config of wireguard netns
     wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
@@ -94,6 +94,25 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     // fetch stats to make sure interface is really up
     let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
 
+    Ok(())
+}
+
+pub async fn apply_addr(netns: Option<&str>, interface: &str, target: &[IpNet]) -> Result<()> {
+    let current = addr_list(netns, interface).await?;
+    for addr in target {
+        if !current.contains(addr) {
+            addr_add(netns, interface, &addr.to_string()).await?;
+        }
+    }
+    Ok(())
+}
+
+/// Make sure that an interface in a given network namespace (or in the root
+/// namespace if none is supplied) is not DOWN.
+pub async fn apply_interface_up(netns: Option<&str>, interface: &str) -> Result<()> {
+    if interface_down(netns, interface).await? {
+        interface_set_up(netns, interface).await?;
+    }
     Ok(())
 }
 
@@ -106,15 +125,21 @@ pub async fn apply_veth(network: &NetworkState) -> Result<()> {
         veth_add(&netns, &veth_name, &veth_name).await?;
     }
 
-    // make sure inner veth is up
-    if interface_down(Some(&netns), &veth_name).await? {
-        interface_set_up(Some(&netns), &veth_name).await?;
-    }
+    // make sure veth interfaces have addresses set
+    let addr: IpAddr = network.veth_ipv4().into();
+    let addr: IpNet = addr.into();
+    let addr = vec![addr];
+    info!("addresses {:?}", addr);
+    apply_addr(Some(&netns), &veth_name, &addr).await
+        .context("Applying veth addr")?;
+    apply_addr(None, &veth_name, &addr).await
+        .context("Applying veth addr")?;
 
-    // make sure outer veth is up
-    if interface_down(None, &veth_name).await? {
-        interface_set_up(None, &veth_name).await?;
-    }
+    // make sure inner veth is up
+    apply_interface_up(Some(&netns), &veth_name).await
+        .context("Making inner veth interface UP")?;
+    apply_interface_up(None, &veth_name).await
+        .context("Marking outer veth interface UP")?;
 
     Ok(())
 }
@@ -123,8 +148,10 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
+/// Start watchdog process that repeatedly checks the state of the system, with
+/// a configurable interval.
 pub async fn watchdog(pool: SqlitePool, duration: Duration) -> Result<()> {
-    info!("Launching watchdog every {}", duration.as_secs());
+    info!("Launching watchdog every {}s", duration.as_secs());
     let mut interval = tokio::time::interval(duration);
     loop {
         interval.tick().await;
