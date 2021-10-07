@@ -2,6 +2,7 @@ mod api;
 mod gateway;
 mod types;
 mod util;
+mod token;
 pub mod wireguard;
 
 use anyhow::Result;
@@ -9,6 +10,7 @@ use sqlx::SqlitePool;
 use std::path::PathBuf;
 use std::time::Duration;
 use structopt::StructOpt;
+use token::Token;
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
@@ -17,7 +19,7 @@ struct Options {
     database: String,
     #[structopt(long, short)]
     /// Security token used to authenticate API requests.
-    secret: Option<String>,
+    secret: String,
 }
 
 #[rocket::main]
@@ -36,6 +38,7 @@ async fn main() -> Result<()> {
     // launch REST API
     rocket::build()
         .mount("/api/v1", api::routes())
+        .manage(Token::new(&options.secret))
         .launch()
         .await?;
 
