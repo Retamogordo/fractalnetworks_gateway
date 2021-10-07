@@ -1,5 +1,5 @@
 use crate::types::*;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Context};
 use log::*;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -72,8 +72,13 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     if !output.status.success() {
         return Err(anyhow!("Error fetching wireguard stats"));
     }
-    let output = String::from_utf8(output.stdout)?;
-    let items: Vec<NetnsItem> = serde_json::from_str(&output)?;
+    let output = String::from_utf8(output.stdout)
+        .context("Parsing command output as string")?;
+    let mut items: Vec<NetnsItem> = vec![];
+    if output.len() > 0 {
+        items = serde_json::from_str(&output)
+            .context("Pasing netns list output as JSON")?;
+    }
     Ok(items)
 }
 
