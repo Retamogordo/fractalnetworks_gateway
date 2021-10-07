@@ -105,6 +105,51 @@ pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Resul
     Ok(())
 }
 
+pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
+    info!("bridge_add({:?}, {})", netns, interface);
+    let mut command = Command::new("/usr/sbin/ip");
+    if let Some(netns) = netns {
+        command
+            .arg("-n")
+            .arg(netns);
+    }
+    let success = command
+        .arg("link")
+        .arg("add")
+        .arg(interface)
+        .arg("type")
+        .arg("bridge")
+        .status()
+        .await?
+        .success();
+    if !success {
+        return Err(anyhow!("Error creating bridge {} in {:?}", interface, netns));
+    }
+    Ok(())
+}
+
+pub async fn bridge_exists(netns: Option<&str>, name: &str) -> Result<bool> {
+    let mut command = Command::new("/usr/sbin/ip");
+    if let Some(netns) = netns {
+        command
+            .arg("-n")
+            .arg(netns);
+    }
+    let output = command
+        .arg("link")
+        .arg("show")
+        .arg(name)
+        .arg("type")
+        .arg("bridge")
+        .output()
+        .await?;
+    if output.status.success() && output.stdout.len() > 0 {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 #[derive(Deserialize)]
 struct InterfaceShow {
     ifindex: usize,

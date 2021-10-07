@@ -13,11 +13,14 @@ use ipnet::IpNet;
 use std::net::IpAddr;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
+const BRIDGE_INTERFACE: &'static str = "ensbr0";
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
 pub async fn apply(state: &[NetworkState]) -> Result<String> {
     info!("Applying new state");
+    apply_bridge(BRIDGE_INTERFACE).await
+        .context("Creating bridge interface")?;
 
     // find out which netns exist right now
     let netns_list: HashSet<String> = netns_list()
@@ -43,6 +46,13 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     }
 
     Ok("success".to_string())
+}
+
+pub async fn apply_bridge(name: &str) -> Result<()> {
+    if !bridge_exists(None, BRIDGE_INTERFACE).await? {
+        bridge_add(None, BRIDGE_INTERFACE).await?;
+    }
+    Ok(())
 }
 
 pub async fn apply_network(network: &NetworkState) -> Result<()> {
