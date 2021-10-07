@@ -5,6 +5,10 @@ use log::*;
 use std::collections::HashSet;
 use std::path::Path;
 use std::time::Duration;
+use tokio::sync::RwLock;
+use std::sync::Arc;
+use std::collections::BTreeMap;
+use sqlx::SqlitePool;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 
@@ -119,7 +123,7 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
-pub async fn watchdog(duration: Duration) -> Result<()> {
+pub async fn watchdog(pool: SqlitePool, duration: Duration) -> Result<()> {
     let mut interval = tokio::time::interval(duration);
     loop {
         interval.tick().await;
