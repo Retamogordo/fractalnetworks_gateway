@@ -254,6 +254,59 @@ pub async fn addr_list(netns: Option<&str>, interface: &str) -> Result<Vec<IpNet
     })).flatten().collect())
 }
 
+#[derive(Deserialize)]
+struct LinkInfo {
+    master: Option<String>
+}
+
+pub async fn link_get_master(netns: Option<&str>, interface: &str) -> Result<Option<String>> {
+    let mut command = Command::new("/usr/sbin/ip");
+    command.arg("--json");
+    if let Some(netns) = netns {
+        command.arg("-n").arg(netns);
+    }
+    let output = command
+        .arg("link")
+        .arg("show")
+        .arg("dev")
+        .arg(interface)
+        .output()
+        .await?;
+    if !output.status.success() {
+        return Err(anyhow!("Error checking interface {} master in {:?}", interface, netns));
+    }
+    let output = String::from_utf8(output.stdout)?;
+    if output.len() == 0 {
+        return Ok(None);
+    }
+    let output: Vec<LinkInfo> = serde_json::from_str(&output)?;
+    if output.len() == 0 {
+        return Ok(None);
+    }
+    Ok(output[0].master.clone())
+}
+
+pub async fn link_set_master(netns: Option<&str>, interface: &str, master: &str) -> Result<()> {
+    let mut command = Command::new("/usr/sbin/ip");
+    command.arg("--json");
+    if let Some(netns) = netns {
+        command.arg("-n").arg(netns);
+    }
+    let status = command
+        .arg("link")
+        .arg("set")
+        .arg("dev")
+        .arg(interface)
+        .arg("master")
+        .arg(master)
+        .status()
+        .await?;
+    if !status.success() {
+        return Err(anyhow!("Error setting interface {} master in {:?} to {}", interface, netns, master));
+    }
+    Ok(())
+}
+
 pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
     info!("veth add {}, {}, {}", netns, outer, inner);
     if !Command::new("/usr/sbin/ip")
@@ -277,7 +330,6 @@ pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
 }
 
 pub async fn veth_exists(netns: &str, name: &str) -> Result<bool> {
-    info!("veth_exists({}, {})", netns, name);
     let output = Command::new("/usr/sbin/ip")
         .arg("-n")
         .arg(netns)
@@ -326,7 +378,6 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
 }
 
 pub async fn wireguard_exists(netns: &str, name: &str) -> Result<bool> {
-    info!("wireguard_exists({}, {})", netns, name);
     let output = Command::new("/usr/sbin/ip")
         .arg("-n")
         .arg(netns)

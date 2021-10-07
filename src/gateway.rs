@@ -16,7 +16,7 @@ use lazy_static::lazy_static;
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 lazy_static! {
-    static ref BRIDGE_NET: IpNet = IpNet::V4(Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 0), 16).unwrap());
+    pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
 }
 
 /// Given a new state, do whatever needs to be done to get the system in that
@@ -25,7 +25,7 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     info!("Applying new state");
 
     // set up bridge
-    apply_bridge(BRIDGE_INTERFACE, &vec![BRIDGE_NET.clone()]).await
+    apply_bridge(BRIDGE_INTERFACE, &vec![(*BRIDGE_NET).into()]).await
         .context("Creating bridge interface")?;
 
     // find out which netns exist right now
@@ -151,14 +151,15 @@ pub async fn apply_veth(network: &NetworkState) -> Result<()> {
     }
 
     // make sure veth interfaces have addresses set
-    let addr: IpAddr = network.veth_ipv4().into();
+    let addr: Ipv4Net = network.veth_ipv4net().into();
     let addr: IpNet = addr.into();
     let addr = vec![addr];
-    info!("addresses {:?}", addr);
     apply_addr(Some(&netns), &veth_name, &addr).await
         .context("Applying veth addr")?;
-    apply_addr(None, &veth_name, &addr).await
-        .context("Applying veth addr")?;
+    //apply_addr(None, &veth_name, &addr).await
+    //    .context("Applying veth addr")?;
+    apply_link_master(None, &veth_name, BRIDGE_INTERFACE).await
+        .context("Setting veth master")?;
 
     // make sure inner veth is up
     apply_interface_up(Some(&netns), &veth_name).await
@@ -166,6 +167,15 @@ pub async fn apply_veth(network: &NetworkState) -> Result<()> {
     apply_interface_up(None, &veth_name).await
         .context("Marking outer veth interface UP")?;
 
+    Ok(())
+}
+
+pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &str) -> Result<()> {
+    let current = link_get_master(netns, interface).await?;
+    if current.is_none() || current.as_deref() != Some(master) {
+        link_set_master(netns, interface, master).await
+            .context("Setting master of interface")?;
+    }
     Ok(())
 }
 

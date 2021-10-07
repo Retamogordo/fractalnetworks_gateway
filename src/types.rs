@@ -7,6 +7,8 @@ use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr};
 use std::net::SocketAddr;
 use std::str::FromStr;
+use crate::gateway::BRIDGE_NET;
+use ipnet::{IpAdd, Ipv4Net};
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
@@ -58,6 +60,12 @@ impl NetworkState {
 
     pub fn veth_ipv4(&self) -> Ipv4Addr {
         Ipv4Addr::new(172, 99, (self.listen_port / 256) as u8, (self.listen_port % 256) as u8)
+    }
+
+    pub fn veth_ipv4net(&self) -> Ipv4Net {
+        let addr = BRIDGE_NET.network();
+        let addr = addr.saturating_add(self.listen_port as u32);
+        Ipv4Net::new(addr, BRIDGE_NET.prefix_len()).unwrap()
     }
 }
 
