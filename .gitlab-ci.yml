@@ -1,0 +1,45 @@
+stages:
+  - test
+  - build
+  - deploy
+
+rustfmt:
+  image: rust:nightly
+  stage: test
+  allow_failure: true
+  script:
+    - cargo fmt -- --check
+
+clippy:
+  image: rust:nightly
+  stage: test
+  allow_failure: true
+  script:
+    - cargo clippy
+
+test:
+  image: rust:nightly
+  stage: test
+  script:
+    - cargo test
+
+build:
+  image: rust:nightly
+  stage: build
+  script:
+    - cargo build --release
+  artifacts:
+    paths:
+      - target/release/gateway
+    expire_in: 1 week
+
+pages:
+  stage: deploy
+  dependencies:
+    - build
+  script:
+    - cargo doc
+    - mv target/doc public
+    - mv target/release/gateway public/gateway-master-amd64
+  only:
+    - master
