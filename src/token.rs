@@ -1,8 +1,5 @@
-
-
-use rocket::http::{Status};
+use rocket::http::Status;
 use rocket::request::{self, FromRequest, Outcome, Request};
-
 
 #[derive(Clone, Debug)]
 pub struct Token {

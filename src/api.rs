@@ -30,11 +30,7 @@ async fn status(_token: Token) -> String {
 }
 
 #[get("/traffic.json?<start>")]
-async fn traffic(
-    _token: Token,
-    pool: &State<SqlitePool>,
-    start: usize,
-) -> Json<TrafficInfo> {
+async fn traffic(_token: Token, pool: &State<SqlitePool>, start: usize) -> Json<TrafficInfo> {
     let traffic = gateway::traffic(pool, start).await.unwrap();
     Json(traffic)
 }

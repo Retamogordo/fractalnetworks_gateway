@@ -6,8 +6,8 @@ use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use std::net::Ipv4Addr;
 use std::net::SocketAddr;
-use std::net::{Ipv4Addr};
 use std::str::FromStr;
 
 pub const NETNS_PREFIX: &'static str = "network-";
