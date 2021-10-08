@@ -34,13 +34,18 @@
             {
                 "public_key": "VrPv8QmR39N1UAtnLyB+Jurx6vSUoi+o1l4uDQpP+WY=",
                 "endpoint": "170.24.12.42:41213",
-                "allowed_ips": ["10.0.0.1/32"]
+                "allowed_ips": ["10.0.0.2/32"]
+            },
+            {
+                "public_key": "Ri5IzsrdaYT9ldzPiB9FRqbc+PlbAPrYLkMgzphGpRQ=",
+                "endpoint": "127.0.0.1:34243",
+                "allowed_ips": ["10.0.0.3/32"]
             }
         ],
         "proxy": {
             "https://gitlab.mydomain.com": ["10.0.0.1:8000"],
             "http://chat.mydomain.com": ["10.0.0.1:7000"],
-            "git://git.mydomain.com": ["10.0.0.1:2020"]
+            "ssh://git.mydomain.com": ["10.0.0.1:2020"]
         }
     }
 }

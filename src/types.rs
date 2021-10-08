@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use ipnet::IpNet;
 use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::net::{IpAddr, Ipv4Addr};
 use std::net::SocketAddr;
 use std::str::FromStr;
@@ -188,3 +188,93 @@ pub struct NetnsItem {
     pub name: String,
     pub id: Option<usize>,
 }
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Traffic {
+    rx: usize,
+    tx: usize,
+}
+
+impl Traffic {
+    pub fn new(rx: usize, tx: usize) -> Self {
+        Traffic {
+            rx,
+            tx,
+        }
+    }
+
+    pub fn add(&mut self, other: &Traffic) {
+        self.rx += other.rx;
+        self.tx += other.tx;
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct TrafficInfo {
+    start_time: usize,
+    stop_time: usize,
+    traffic: Traffic,
+    networks: BTreeMap<String, NetworkTraffic>,
+}
+
+impl TrafficInfo {
+    pub fn new(start_time: usize) -> Self {
+        TrafficInfo {
+            start_time,
+            stop_time: start_time,
+            traffic: Traffic::new(0, 0),
+            networks: BTreeMap::new()
+        }
+    }
+
+    pub fn add(&mut self, network: String, device: String, time: usize, traffic: Traffic) {
+        self.traffic.add(&traffic);
+        let mut network_traffic = self.networks.entry(network)
+            .or_insert(NetworkTraffic::new());
+        self.stop_time = self.stop_time.max(time);
+        network_traffic.add(device, time, traffic);
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct NetworkTraffic {
+    traffic: Traffic,
+    devices: BTreeMap<String, DeviceTraffic>,
+}
+
+impl NetworkTraffic {
+    pub fn new() -> Self {
+        NetworkTraffic {
+            traffic: Traffic::new(0, 0),
+            devices: BTreeMap::new(),
+        }
+    }
+
+    pub fn add(&mut self, device: String, time: usize, traffic: Traffic) {
+        self.traffic.add(&traffic);
+        let mut device_traffic = self.devices.entry(device)
+            .or_insert(DeviceTraffic::new());
+        device_traffic.add(time, traffic);
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct DeviceTraffic {
+    traffic: Traffic,
+    times: BTreeMap<usize, Traffic>,
+}
+
+impl DeviceTraffic {
+    pub fn new() -> Self {
+        DeviceTraffic {
+            traffic: Traffic::new(0, 0),
+            times: BTreeMap::new(),
+        }
+    }
+
+    pub fn add(&mut self, time: usize, traffic: Traffic) {
+        self.traffic.add(&traffic);
+        self.times.insert(time, traffic);
+    }
+}
+

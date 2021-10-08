@@ -38,12 +38,19 @@ async fn main() -> Result<()> {
 
     // launch watchdog, which after the interval will pull in traffic stats
     // and make sure that everything is running as it should.
-    rocket::tokio::spawn(gateway::watchdog(pool.clone(), options.watchdog));
+    let pool_clone = pool.clone();
+    rocket::tokio::spawn(async move {
+        match gateway::watchdog(pool_clone, options.watchdog).await {
+            Ok(_) => {},
+            Err(e) => log::error!("{}", e),
+        }
+    });
 
     // launch REST API
     rocket::build()
         .mount("/api/v1", api::routes())
         .manage(Token::new(&options.secret))
+        .manage(pool)
         .launch()
         .await?;
 

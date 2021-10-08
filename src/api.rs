@@ -4,6 +4,7 @@ use crate::token::Token;
 use rocket::serde::json::Json;
 use rocket::*;
 use std::collections::BTreeMap;
+use sqlx::SqlitePool;
 
 #[post("/config.json", data = "<data>")]
 async fn config_set(token: Token, data: Json<BTreeMap<u16, NetworkState>>) -> String {
@@ -28,9 +29,10 @@ async fn status(token: Token) -> String {
     "TODO".to_string()
 }
 
-#[get("/traffic.json")]
-async fn traffic(token: Token) -> String {
-    "TODO".to_string()
+#[get("/traffic.json?<start>&<stop>")]
+async fn traffic(token: Token, pool: &State<SqlitePool>, start: usize, stop: Option<usize>) -> Json<TrafficInfo> {
+    let traffic = gateway::traffic(pool.clone(), start).await.unwrap();
+    Json(traffic)
 }
 
 pub fn routes() -> Vec<rocket::Route> {

@@ -12,6 +12,8 @@ use sqlx::{query, query_as, SqlitePool};
 use ipnet::{IpNet, Ipv4Net};
 use std::net::{IpAddr, Ipv4Addr};
 use lazy_static::lazy_static;
+use std::time::{SystemTime, UNIX_EPOCH};
+use rocket::futures::TryStreamExt;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
@@ -215,17 +217,67 @@ pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
 }
 
 pub async fn watchdog_peer(pool: &SqlitePool, stats: &NetworkStats, peer: &PeerStats) -> Result<()> {
-    query(
-        "INSERT OR IGNORE INTO gateway_network(network_pubkey)
-            VALUES (?)")
+    // find most recent entry for this peer
+    let prev: Option<(i64, i64, i64)> = query_as(
+        "SELECT traffic_rx_raw, traffic_tx_raw, MAX(time) FROM gateway_traffic
+            WHERE network_pubkey = ? AND device_pubkey = ?")
         .bind(stats.public_key.as_slice())
-        .execute(pool)
-        .await?;
-    query(
-        "INSERT OR IGNORE INTO gateway_device(device_pubkey)
-            VALUES (?)")
         .bind(peer.public_key.as_slice())
+        .fetch_optional(pool)
+        .await?;
+    let (traffic_rx, traffic_tx) = if let Some((traffic_rx_raw, traffic_tx_raw, _time)) = prev {
+        let traffic_rx = peer.transfer_rx as i64;
+        let traffic_tx = peer.transfer_tx as i64;
+        if traffic_rx_raw < traffic_rx && traffic_tx_raw < traffic_tx {
+            (traffic_rx - traffic_rx_raw, traffic_tx - traffic_tx_raw)
+        } else {
+            (0, 0)
+        }
+    } else {
+        (0, 0)
+    };
+    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?;
+    query(
+        "INSERT INTO gateway_traffic(
+            network_pubkey,
+            device_pubkey,
+            time,
+            traffic_rx,
+            traffic_rx_raw,
+            traffic_tx,
+            traffic_tx_raw)
+        VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(stats.public_key.as_slice())
+        .bind(peer.public_key.as_slice())
+        .bind(timestamp.as_secs() as i64)
+        .bind(traffic_rx as i64)
+        .bind(peer.transfer_rx as i64)
+        .bind(traffic_tx as i64)
+        .bind(peer.transfer_tx as i64)
         .execute(pool)
         .await?;
     Ok(())
+}
+
+pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo> {
+    let mut traffic_info = TrafficInfo::new(start_time);
+    let mut network_pubkey: Vec<u8> = vec![];
+    let mut network_pubkey_str = "".to_string();
+    let mut device_pubkey: Vec<u8> = vec![];
+    let mut device_pubkey_str = "".to_string();
+
+    let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>("SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time FROM gateway_traffic WHERE time > ?")
+        .bind(start_time as i64)
+        .fetch(pool);
+
+    while let Some((network, device, rx, tx, time)) = rows.try_next().await? {
+        let traffic = Traffic::new(rx as usize, tx as usize);
+        let time = time as usize;
+        let network = base64::encode(&network);
+        let device = base64::encode(&device);
+        traffic_info.add(network, device, time, traffic);
+        //traffic_info.add
+    }
+
+    Ok(traffic_info)
 }
