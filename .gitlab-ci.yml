@@ -8,7 +8,7 @@ cache:
     - .cache/sccache
 
 before_script:
-  - wget https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz /tmp/sccache.tar.gz
+  - wget https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz /tmp/sccache.tar.gz -O /tmp/sccache.tar.gz
   - tar -xf /tmp/sccache.tar.gz --strip-components=1 -C /usr/local/bin/
   - chmod +x /usr/local/bin/sccache
   - export CARGO_HOME="${PWD}/.cargo"
