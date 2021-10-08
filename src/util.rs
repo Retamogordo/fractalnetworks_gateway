@@ -1,12 +1,12 @@
 use crate::types::*;
-use anyhow::{anyhow, Result, Context};
+use anyhow::{anyhow, Context, Result};
+use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use log::*;
+use rocket::serde::Deserialize;
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tokio::process::Command;
-use rocket::serde::Deserialize;
-use std::net::{Ipv4Addr, IpAddr};
-use ipnet::{Ipv4Net, Ipv6Net, IpNet};
 
 pub async fn netns_add(name: &str) -> Result<()> {
     info!("netns add {}", name);
@@ -72,12 +72,10 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     if !output.status.success() {
         return Err(anyhow!("Error fetching wireguard stats"));
     }
-    let output = String::from_utf8(output.stdout)
-        .context("Parsing command output as string")?;
+    let output = String::from_utf8(output.stdout).context("Parsing command output as string")?;
     let mut items: Vec<NetnsItem> = vec![];
     if output.len() > 0 {
-        items = serde_json::from_str(&output)
-            .context("Pasing netns list output as JSON")?;
+        items = serde_json::from_str(&output).context("Pasing netns list output as JSON")?;
     }
     Ok(items)
 }
@@ -86,9 +84,7 @@ pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Resul
     info!("addr add {:?}, {}, {}", netns, interface, addr);
     let mut command = Command::new("/usr/sbin/ip");
     if let Some(netns) = netns {
-        command
-            .arg("-n")
-            .arg(netns);
+        command.arg("-n").arg(netns);
     }
     let success = command
         .arg("addr")
@@ -109,9 +105,7 @@ pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
     info!("bridge_add({:?}, {})", netns, interface);
     let mut command = Command::new("/usr/sbin/ip");
     if let Some(netns) = netns {
-        command
-            .arg("-n")
-            .arg(netns);
+        command.arg("-n").arg(netns);
     }
     let success = command
         .arg("link")
@@ -123,7 +117,11 @@ pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
         .await?
         .success();
     if !success {
-        return Err(anyhow!("Error creating bridge {} in {:?}", interface, netns));
+        return Err(anyhow!(
+            "Error creating bridge {} in {:?}",
+            interface,
+            netns
+        ));
     }
     Ok(())
 }
@@ -131,9 +129,7 @@ pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
 pub async fn bridge_exists(netns: Option<&str>, name: &str) -> Result<bool> {
     let mut command = Command::new("/usr/sbin/ip");
     if let Some(netns) = netns {
-        command
-            .arg("-n")
-            .arg(netns);
+        command.arg("-n").arg(netns);
     }
     let output = command
         .arg("link")
@@ -162,18 +158,10 @@ pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool
     let mut command = Command::new("/usr/sbin/ip");
     command.arg("--json");
     if let Some(netns) = netns {
-        command
-            .arg("-n")
-            .arg(netns);
+        command.arg("-n").arg(netns);
     }
-    command
-        .arg("link")
-        .arg("show")
-        .arg("dev")
-        .arg(interface);
-    let output = command
-        .output()
-        .await?;
+    command.arg("link").arg("show").arg("dev").arg(interface);
+    let output = command.output().await?;
     if !output.status.success() {
         return Err(anyhow!("Error checking interface state"));
     }
@@ -190,21 +178,10 @@ pub async fn interface_set_up(netns: Option<&str>, interface: &str) -> Result<()
     info!("interface_up({:?}, {})", netns, interface);
     let mut command = Command::new("/usr/sbin/ip");
     if let Some(netns) = netns {
-        command
-            .arg("-n")
-            .arg(netns);
+        command.arg("-n").arg(netns);
     }
-    command
-        .arg("link")
-        .arg("set")
-        .arg(interface)
-        .arg("up");
-    if !command
-        .status()
-        .await?
-        .success()
-
-    {
+    command.arg("link").arg("set").arg(interface).arg("up");
+    if !command.status().await?.success() {
         return Err(anyhow!("Error setting interface up"));
     }
     Ok(())
@@ -225,16 +202,22 @@ struct IpInterfaceAddrInfo {
 fn test_ip_addr() {
     let test = r#"[{"ifindex":58,"ifname":"wg0","flags":["POINTOPOINT","NOARP","UP","LOWER_UP"],"mtu":1420,"qdisc":"noqueue","operstate":"UNKNOWN","group":"default","txqlen":1000,"link_type":"none","addr_info":[{"family":"inet","local":"10.80.69.7","prefixlen":24,"scope":"global","label":"wg0","valid_life_time":4294967295,"preferred_life_time":4294967295}]}]"#;
     let output: Vec<IpInterfaceAddr> = serde_json::from_str(test).unwrap();
-    assert_eq!(output, vec![IpInterfaceAddr { addr_info: vec![IpInterfaceAddrInfo { local: IpAddr::V4(Ipv4Addr::new(10, 80, 69, 7)), prefixlen: 24 }], }]);
+    assert_eq!(
+        output,
+        vec![IpInterfaceAddr {
+            addr_info: vec![IpInterfaceAddrInfo {
+                local: IpAddr::V4(Ipv4Addr::new(10, 80, 69, 7)),
+                prefixlen: 24
+            }],
+        }]
+    );
 }
 
 pub async fn addr_list(netns: Option<&str>, interface: &str) -> Result<Vec<IpNet>> {
     let mut command = Command::new("/usr/sbin/ip");
     command.arg("--json");
     if let Some(netns) = netns {
-        command
-            .arg("-n")
-            .arg(netns);
+        command.arg("-n").arg(netns);
     }
     let output = command
         .arg("addr")
@@ -244,19 +227,29 @@ pub async fn addr_list(netns: Option<&str>, interface: &str) -> Result<Vec<IpNet
         .output()
         .await?;
     if !output.status.success() {
-        return Err(anyhow!("Error fetching addr for {} in {:?}", interface, netns));
+        return Err(anyhow!(
+            "Error fetching addr for {} in {:?}",
+            interface,
+            netns
+        ));
     }
     let output = String::from_utf8(output.stdout)?;
     let items: Vec<IpInterfaceAddr> = serde_json::from_str(&output)?;
-    Ok(items.iter().map(|addr| addr.addr_info.iter().map(|info| match info.local {
-        IpAddr::V4(addr) => IpNet::V4(Ipv4Net::new(addr, info.prefixlen).unwrap()),
-        IpAddr::V6(addr) => IpNet::V6(Ipv6Net::new(addr, info.prefixlen).unwrap()),
-    })).flatten().collect())
+    Ok(items
+        .iter()
+        .map(|addr| {
+            addr.addr_info.iter().map(|info| match info.local {
+                IpAddr::V4(addr) => IpNet::V4(Ipv4Net::new(addr, info.prefixlen).unwrap()),
+                IpAddr::V6(addr) => IpNet::V6(Ipv6Net::new(addr, info.prefixlen).unwrap()),
+            })
+        })
+        .flatten()
+        .collect())
 }
 
 #[derive(Deserialize)]
 struct LinkInfo {
-    master: Option<String>
+    master: Option<String>,
 }
 
 pub async fn link_get_master(netns: Option<&str>, interface: &str) -> Result<Option<String>> {
@@ -273,7 +266,11 @@ pub async fn link_get_master(netns: Option<&str>, interface: &str) -> Result<Opt
         .output()
         .await?;
     if !output.status.success() {
-        return Err(anyhow!("Error checking interface {} master in {:?}", interface, netns));
+        return Err(anyhow!(
+            "Error checking interface {} master in {:?}",
+            interface,
+            netns
+        ));
     }
     let output = String::from_utf8(output.stdout)?;
     if output.len() == 0 {
@@ -302,7 +299,12 @@ pub async fn link_set_master(netns: Option<&str>, interface: &str, master: &str)
         .status()
         .await?;
     if !status.success() {
-        return Err(anyhow!("Error setting interface {} master in {:?} to {}", interface, netns, master));
+        return Err(anyhow!(
+            "Error setting interface {} master in {:?} to {}",
+            interface,
+            netns,
+            master
+        ));
     }
     Ok(())
 }
@@ -324,7 +326,12 @@ pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
         .await?
         .success()
     {
-        return Err(anyhow!("Error creating veth interfaces {} and {} in {}", outer, inner, netns));
+        return Err(anyhow!(
+            "Error creating veth interfaces {} and {} in {}",
+            outer,
+            inner,
+            netns
+        ));
     }
     Ok(())
 }

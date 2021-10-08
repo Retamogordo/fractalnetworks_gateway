@@ -1,14 +1,14 @@
+use crate::gateway::BRIDGE_NET;
 use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
 use anyhow::anyhow;
 use ipnet::IpNet;
+use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use std::net::{IpAddr, Ipv4Addr};
 use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
-use crate::gateway::BRIDGE_NET;
-use ipnet::{IpAdd, Ipv4Net};
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
@@ -59,7 +59,12 @@ impl NetworkState {
     }
 
     pub fn veth_ipv4(&self) -> Ipv4Addr {
-        Ipv4Addr::new(172, 99, (self.listen_port / 256) as u8, (self.listen_port % 256) as u8)
+        Ipv4Addr::new(
+            172,
+            99,
+            (self.listen_port / 256) as u8,
+            (self.listen_port % 256) as u8,
+        )
     }
 
     pub fn veth_ipv4net(&self) -> Ipv4Net {
@@ -121,7 +126,6 @@ impl FromStr for NetworkStats {
                 .collect::<Result<Vec<_>, _>>()?,
         })
     }
-
 }
 
 impl NetworkStats {
@@ -197,10 +201,7 @@ pub struct Traffic {
 
 impl Traffic {
     pub fn new(rx: usize, tx: usize) -> Self {
-        Traffic {
-            rx,
-            tx,
-        }
+        Traffic { rx, tx }
     }
 
     pub fn add(&mut self, other: &Traffic) {
@@ -223,13 +224,15 @@ impl TrafficInfo {
             start_time,
             stop_time: start_time,
             traffic: Traffic::new(0, 0),
-            networks: BTreeMap::new()
+            networks: BTreeMap::new(),
         }
     }
 
     pub fn add(&mut self, network: String, device: String, time: usize, traffic: Traffic) {
         self.traffic.add(&traffic);
-        let mut network_traffic = self.networks.entry(network)
+        let mut network_traffic = self
+            .networks
+            .entry(network)
             .or_insert(NetworkTraffic::new());
         self.stop_time = self.stop_time.max(time);
         network_traffic.add(device, time, traffic);
@@ -252,8 +255,7 @@ impl NetworkTraffic {
 
     pub fn add(&mut self, device: String, time: usize, traffic: Traffic) {
         self.traffic.add(&traffic);
-        let mut device_traffic = self.devices.entry(device)
-            .or_insert(DeviceTraffic::new());
+        let mut device_traffic = self.devices.entry(device).or_insert(DeviceTraffic::new());
         device_traffic.add(time, traffic);
     }
 }
@@ -277,4 +279,3 @@ impl DeviceTraffic {
         self.times.insert(time, traffic);
     }
 }
-

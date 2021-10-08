@@ -1,19 +1,19 @@
 use crate::types::*;
 use crate::util::*;
 use anyhow::{Context, Result};
-use log::*;
-use std::collections::HashSet;
-use std::path::Path;
-use std::time::Duration;
-use tokio::sync::RwLock;
-use std::sync::Arc;
-use std::collections::BTreeMap;
-use sqlx::{query, query_as, SqlitePool};
 use ipnet::{IpNet, Ipv4Net};
-use std::net::{IpAddr, Ipv4Addr};
 use lazy_static::lazy_static;
-use std::time::{SystemTime, UNIX_EPOCH};
+use log::*;
 use rocket::futures::TryStreamExt;
+use sqlx::{query, query_as, SqlitePool};
+use std::collections::BTreeMap;
+use std::collections::HashSet;
+use std::net::{IpAddr, Ipv4Addr};
+use std::path::Path;
+use std::sync::Arc;
+use std::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::RwLock;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
@@ -28,7 +28,8 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     info!("Applying new state");
 
     // set up bridge
-    apply_bridge(BRIDGE_INTERFACE, &vec![(*BRIDGE_NET).into()]).await
+    apply_bridge(BRIDGE_INTERFACE, &vec![(*BRIDGE_NET).into()])
+        .await
         .context("Creating bridge interface")?;
 
     // find out which netns exist right now
@@ -64,10 +65,12 @@ pub async fn apply_bridge(name: &str, addr: &[IpNet]) -> Result<()> {
         bridge_add(None, BRIDGE_INTERFACE).await?;
     }
 
-    apply_addr(None, BRIDGE_INTERFACE, &addr).await
+    apply_addr(None, BRIDGE_INTERFACE, &addr)
+        .await
         .context("Setting up bridge interface")?;
 
-    apply_interface_up(None, BRIDGE_INTERFACE).await
+    apply_interface_up(None, BRIDGE_INTERFACE)
+        .await
         .context("Bringing bridge interface up")?;
 
     Ok(())
@@ -101,7 +104,8 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
         wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
     }
 
-    apply_interface_up(Some(&netns), WIREGUARD_INTERFACE).await
+    apply_interface_up(Some(&netns), WIREGUARD_INTERFACE)
+        .await
         .context("Setting wireguard interface UP")?;
 
     // write wireguard config
@@ -113,7 +117,8 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     .await?;
 
     // set wireguard interface addresses to allow kernel ingress traffic
-    apply_addr(Some(&netns), WIREGUARD_INTERFACE, &network.address).await
+    apply_addr(Some(&netns), WIREGUARD_INTERFACE, &network.address)
+        .await
         .context("Applying wireguard interface addresses")?;
 
     // sync config of wireguard netns
@@ -157,17 +162,21 @@ pub async fn apply_veth(network: &NetworkState) -> Result<()> {
     let addr: Ipv4Net = network.veth_ipv4net().into();
     let addr: IpNet = addr.into();
     let addr = vec![addr];
-    apply_addr(Some(&netns), &veth_name, &addr).await
+    apply_addr(Some(&netns), &veth_name, &addr)
+        .await
         .context("Applying veth addr")?;
     //apply_addr(None, &veth_name, &addr).await
     //    .context("Applying veth addr")?;
-    apply_link_master(None, &veth_name, BRIDGE_INTERFACE).await
+    apply_link_master(None, &veth_name, BRIDGE_INTERFACE)
+        .await
         .context("Setting veth master")?;
 
     // make sure inner veth is up
-    apply_interface_up(Some(&netns), &veth_name).await
+    apply_interface_up(Some(&netns), &veth_name)
+        .await
         .context("Making inner veth interface UP")?;
-    apply_interface_up(None, &veth_name).await
+    apply_interface_up(None, &veth_name)
+        .await
         .context("Marking outer veth interface UP")?;
 
     Ok(())
@@ -176,7 +185,8 @@ pub async fn apply_veth(network: &NetworkState) -> Result<()> {
 pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &str) -> Result<()> {
     let current = link_get_master(netns, interface).await?;
     if current.is_none() || current.as_deref() != Some(master) {
-        link_set_master(netns, interface, master).await
+        link_set_master(netns, interface, master)
+            .await
             .context("Setting master of interface")?;
     }
     Ok(())
@@ -217,15 +227,20 @@ pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn watchdog_peer(pool: &SqlitePool, stats: &NetworkStats, peer: &PeerStats) -> Result<()> {
+pub async fn watchdog_peer(
+    pool: &SqlitePool,
+    stats: &NetworkStats,
+    peer: &PeerStats,
+) -> Result<()> {
     // find most recent entry for this peer
     let prev: Option<(i64, i64, i64)> = query_as(
         "SELECT traffic_rx_raw, traffic_tx_raw, MAX(time) FROM gateway_traffic
-            WHERE network_pubkey = ? AND device_pubkey = ?")
-        .bind(stats.public_key.as_slice())
-        .bind(peer.public_key.as_slice())
-        .fetch_optional(pool)
-        .await?;
+            WHERE network_pubkey = ? AND device_pubkey = ?",
+    )
+    .bind(stats.public_key.as_slice())
+    .bind(peer.public_key.as_slice())
+    .fetch_optional(pool)
+    .await?;
     let (traffic_rx, traffic_tx) = if let Some((traffic_rx_raw, traffic_tx_raw, _time)) = prev {
         let traffic_rx = peer.transfer_rx as i64;
         let traffic_tx = peer.transfer_tx as i64;
@@ -247,16 +262,17 @@ pub async fn watchdog_peer(pool: &SqlitePool, stats: &NetworkStats, peer: &PeerS
             traffic_rx_raw,
             traffic_tx,
             traffic_tx_raw)
-        VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .bind(stats.public_key.as_slice())
-        .bind(peer.public_key.as_slice())
-        .bind(timestamp.as_secs() as i64)
-        .bind(traffic_rx as i64)
-        .bind(peer.transfer_rx as i64)
-        .bind(traffic_tx as i64)
-        .bind(peer.transfer_tx as i64)
-        .execute(pool)
-        .await?;
+        VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(stats.public_key.as_slice())
+    .bind(peer.public_key.as_slice())
+    .bind(timestamp.as_secs() as i64)
+    .bind(traffic_rx as i64)
+    .bind(peer.transfer_rx as i64)
+    .bind(traffic_tx as i64)
+    .bind(peer.transfer_tx as i64)
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
@@ -309,9 +325,7 @@ pub async fn garbage_collect(pool: &SqlitePool) -> Result<()> {
         .await?;
     if result.rows_affected() > 0 {
         info!("Removed {} traffic data lines", result.rows_affected());
-        query("VACUUM")
-            .execute(pool)
-            .await?;
+        query("VACUUM").execute(pool).await?;
         info!("Completed database vacuum");
     }
     Ok(())

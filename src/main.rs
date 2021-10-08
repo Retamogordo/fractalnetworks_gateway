@@ -1,8 +1,8 @@
 mod api;
 mod gateway;
+mod token;
 mod types;
 mod util;
-mod token;
 pub mod wireguard;
 
 use anyhow::Result;
@@ -42,7 +42,7 @@ async fn main() -> Result<()> {
     rocket::tokio::spawn(async move {
         loop {
             match gateway::watchdog(&pool_clone, options.watchdog).await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => log::error!("{}", e),
             }
         }
@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
     rocket::tokio::spawn(async move {
         loop {
             match gateway::garbage(&pool_clone, Duration::from_secs(60 * 60)).await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => log::error!("{}", e),
             }
         }

@@ -1,8 +1,8 @@
-use rocket::{Data, Response};
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::http::{Method, ContentType, Status, Header};
 use rocket::http::uri::Origin;
-use rocket::request::{self, Outcome, Request, FromRequest};
+use rocket::http::{ContentType, Header, Method, Status};
+use rocket::request::{self, FromRequest, Outcome, Request};
+use rocket::{Data, Response};
 
 #[derive(Clone, Debug)]
 pub struct Token {
@@ -12,7 +12,7 @@ pub struct Token {
 impl Token {
     pub fn new(value: &str) -> Self {
         Token {
-            value: value.to_string()
+            value: value.to_string(),
         }
     }
 }
