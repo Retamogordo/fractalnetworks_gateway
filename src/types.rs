@@ -6,7 +6,6 @@ use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use std::net::Ipv4Addr;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
