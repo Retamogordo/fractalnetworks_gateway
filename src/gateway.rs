@@ -205,7 +205,6 @@ pub async fn watchdog(pool: &SqlitePool, duration: Duration) -> Result<()> {
         interval.tick().await;
         watchdog_run(&pool).await?;
     }
-    Ok(())
 }
 
 pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
@@ -308,7 +307,6 @@ pub async fn garbage(pool: &SqlitePool, duration: Duration) -> Result<()> {
         interval.tick().await;
         garbage_collect(&pool).await?;
     }
-    Ok(())
 }
 
 /// Deletes all traffic items in the database that are older than

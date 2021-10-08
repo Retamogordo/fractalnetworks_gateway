@@ -29,12 +29,11 @@ async fn status(token: Token) -> String {
     "TODO".to_string()
 }
 
-#[get("/traffic.json?<start>&<stop>")]
+#[get("/traffic.json?<start>")]
 async fn traffic(
     token: Token,
     pool: &State<SqlitePool>,
     start: usize,
-    stop: Option<usize>,
 ) -> Json<TrafficInfo> {
     let traffic = gateway::traffic(pool, start).await.unwrap();
     Json(traffic)
