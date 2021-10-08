@@ -36,7 +36,7 @@ async fn traffic(
     start: usize,
     stop: Option<usize>,
 ) -> Json<TrafficInfo> {
-    let traffic = gateway::traffic(pool.clone(), start).await.unwrap();
+    let traffic = gateway::traffic(pool, start).await.unwrap();
     Json(traffic)
 }
 
