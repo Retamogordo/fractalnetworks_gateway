@@ -1,8 +1,8 @@
-use rocket::fairing::{Fairing, Info, Kind};
-use rocket::http::uri::Origin;
-use rocket::http::{ContentType, Header, Method, Status};
+
+
+use rocket::http::{Status};
 use rocket::request::{self, FromRequest, Outcome, Request};
-use rocket::{Data, Response};
+
 
 #[derive(Clone, Debug)]
 pub struct Token {

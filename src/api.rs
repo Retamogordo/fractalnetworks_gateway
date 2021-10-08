@@ -7,7 +7,7 @@ use sqlx::SqlitePool;
 use std::collections::BTreeMap;
 
 #[post("/config.json", data = "<data>")]
-async fn config_set(token: Token, data: Json<BTreeMap<u16, NetworkState>>) -> String {
+async fn config_set(_token: Token, data: Json<BTreeMap<u16, NetworkState>>) -> String {
     let data: Vec<NetworkState> = data
         .iter()
         .map(|(port, state)| {
@@ -20,18 +20,18 @@ async fn config_set(token: Token, data: Json<BTreeMap<u16, NetworkState>>) -> St
 }
 
 #[get("/config.json")]
-async fn config_get(token: Token) -> String {
+async fn config_get(_token: Token) -> String {
     "TODO".to_string()
 }
 
 #[get("/status.json")]
-async fn status(token: Token) -> String {
+async fn status(_token: Token) -> String {
     "TODO".to_string()
 }
 
 #[get("/traffic.json?<start>")]
 async fn traffic(
-    token: Token,
+    _token: Token,
     pool: &State<SqlitePool>,
     start: usize,
 ) -> Json<TrafficInfo> {

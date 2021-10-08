@@ -7,7 +7,7 @@ use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::net::SocketAddr;
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{Ipv4Addr};
 use std::str::FromStr;
 
 pub const NETNS_PREFIX: &'static str = "network-";
@@ -56,15 +56,6 @@ impl NetworkState {
 
     pub fn veth_name(&self) -> String {
         format!("{}{}", VETH_PREFIX, self.listen_port)
-    }
-
-    pub fn veth_ipv4(&self) -> Ipv4Addr {
-        Ipv4Addr::new(
-            172,
-            99,
-            (self.listen_port / 256) as u8,
-            (self.listen_port % 256) as u8,
-        )
     }
 
     pub fn veth_ipv4net(&self) -> Ipv4Net {
@@ -230,7 +221,7 @@ impl TrafficInfo {
 
     pub fn add(&mut self, network: String, device: String, time: usize, traffic: Traffic) {
         self.traffic.add(&traffic);
-        let mut network_traffic = self
+        let network_traffic = self
             .networks
             .entry(network)
             .or_insert(NetworkTraffic::new());
@@ -255,7 +246,7 @@ impl NetworkTraffic {
 
     pub fn add(&mut self, device: String, time: usize, traffic: Traffic) {
         self.traffic.add(&traffic);
-        let mut device_traffic = self.devices.entry(device).or_insert(DeviceTraffic::new());
+        let device_traffic = self.devices.entry(device).or_insert(DeviceTraffic::new());
         device_traffic.add(time, traffic);
     }
 }

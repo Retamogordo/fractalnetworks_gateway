@@ -3,7 +3,7 @@ use anyhow::{anyhow, Context, Result};
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use log::*;
 use rocket::serde::Deserialize;
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tokio::process::Command;
@@ -147,7 +147,7 @@ pub async fn bridge_exists(netns: Option<&str>, name: &str) -> Result<bool> {
 }
 
 #[derive(Deserialize)]
-struct InterfaceShow {
+pub struct InterfaceShow {
     ifindex: usize,
     ifname: String,
     mtu: Option<usize>,

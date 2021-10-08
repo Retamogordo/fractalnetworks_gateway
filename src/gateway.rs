@@ -6,14 +6,14 @@ use lazy_static::lazy_static;
 use log::*;
 use rocket::futures::TryStreamExt;
 use sqlx::{query, query_as, SqlitePool};
-use std::collections::BTreeMap;
+
 use std::collections::HashSet;
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{Ipv4Addr};
 use std::path::Path;
-use std::sync::Arc;
+
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::sync::RwLock;
+
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
@@ -60,7 +60,7 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
 
 /// Make sure the bridge interface exists, is up and has a certain address
 /// set up.
-pub async fn apply_bridge(name: &str, addr: &[IpNet]) -> Result<()> {
+pub async fn apply_bridge(_name: &str, addr: &[IpNet]) -> Result<()> {
     if !bridge_exists(None, BRIDGE_INTERFACE).await? {
         bridge_add(None, BRIDGE_INTERFACE).await?;
     }
@@ -125,7 +125,7 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
 
     // fetch stats to make sure interface is really up
-    let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
+    let _stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
 
     Ok(())
 }
@@ -192,7 +192,7 @@ pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &st
     Ok(())
 }
 
-pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
+pub async fn apply_forwarding(_network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
@@ -277,10 +277,10 @@ pub async fn watchdog_peer(
 
 pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo> {
     let mut traffic_info = TrafficInfo::new(start_time);
-    let mut network_pubkey: Vec<u8> = vec![];
-    let mut network_pubkey_str = "".to_string();
-    let mut device_pubkey: Vec<u8> = vec![];
-    let mut device_pubkey_str = "".to_string();
+    let _network_pubkey: Vec<u8> = vec![];
+    let _network_pubkey_str = "".to_string();
+    let _device_pubkey: Vec<u8> = vec![];
+    let _device_pubkey_str = "".to_string();
 
     let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>("SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time FROM gateway_traffic WHERE time > ?")
         .bind(start_time as i64)
