@@ -11,6 +11,7 @@ use std::str::FromStr;
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
+const PORT_MAPPING_START: usize = 2000;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct NetworkState {
@@ -61,6 +62,16 @@ impl NetworkState {
         let addr = BRIDGE_NET.network();
         let addr = addr.saturating_add(self.listen_port as u32);
         Ipv4Net::new(addr, BRIDGE_NET.prefix_len()).unwrap()
+    }
+
+    pub fn port_mappings(&self) -> Vec<(usize, SocketAddr)> {
+        self.proxy
+            .iter()
+            .map(|(_, addrs)| addrs.iter())
+            .flatten()
+            .enumerate()
+            .map(|(i, addr)| (PORT_MAPPING_START + i, *addr))
+            .collect()
     }
 }
 

@@ -88,6 +88,7 @@ pub async fn apply_netns(network: &NetworkState) -> Result<()> {
     if !netns_exists(&netns).await? {
         netns_add(&netns).await?;
     }
+
     Ok(())
 }
 
@@ -189,7 +190,9 @@ pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &st
     Ok(())
 }
 
-pub async fn apply_forwarding(_network: &NetworkState) -> Result<()> {
+pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
+    let netns = network.netns_name();
+    let mappings = network.port_mappings();
     Ok(())
 }
 
