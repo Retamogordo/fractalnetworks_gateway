@@ -200,6 +200,7 @@ struct IpInterfaceAddrInfo {
 
 #[test]
 fn test_ip_addr() {
+    use std::net::Ipv4Addr;
     let test = r#"[{"ifindex":58,"ifname":"wg0","flags":["POINTOPOINT","NOARP","UP","LOWER_UP"],"mtu":1420,"qdisc":"noqueue","operstate":"UNKNOWN","group":"default","txqlen":1000,"link_type":"none","addr_info":[{"family":"inet","local":"10.80.69.7","prefixlen":24,"scope":"global","label":"wg0","valid_life_time":4294967295,"preferred_life_time":4294967295}]}]"#;
     let output: Vec<IpInterfaceAddr> = serde_json::from_str(test).unwrap();
     assert_eq!(
