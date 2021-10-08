@@ -20,6 +20,7 @@ const BRIDGE_INTERFACE: &'static str = "ensbr0";
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
 }
+const TRAFFIC_RETENTION: Duration = Duration::from_secs(24 * 60 * 60);
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
@@ -187,7 +188,7 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
 
 /// Start watchdog process that repeatedly checks the state of the system, with
 /// a configurable interval.
-pub async fn watchdog(pool: SqlitePool, duration: Duration) -> Result<()> {
+pub async fn watchdog(pool: &SqlitePool, duration: Duration) -> Result<()> {
     info!("Launching watchdog every {}s", duration.as_secs());
     let mut interval = tokio::time::interval(duration);
     loop {
@@ -280,4 +281,38 @@ pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo
     }
 
     Ok(traffic_info)
+}
+
+/// Garbage collector. This runs in a configurable interval (by default, once
+/// per hour) and runs garbage_collect().
+pub async fn garbage(pool: &SqlitePool, duration: Duration) -> Result<()> {
+    info!("Launching garbage collector every {}s", duration.as_secs());
+    let mut interval = tokio::time::interval(duration);
+    loop {
+        interval.tick().await;
+        garbage_collect(&pool).await?;
+    }
+    Ok(())
+}
+
+/// Deletes all traffic items in the database that are older than
+/// TRAFFIC_RETENTION, and finally performs a VACUUM on the database to ensure
+/// it is as compact as possible. Without this, the database file would keep
+/// growing in size.
+pub async fn garbage_collect(pool: &SqlitePool) -> Result<()> {
+    info!("Running garbage collection");
+    let time = SystemTime::now().duration_since(UNIX_EPOCH)?;
+    let cutoff = time - TRAFFIC_RETENTION;
+    let result = query("DELETE FROM gateway_traffic WHERE time < ?")
+        .bind(cutoff.as_secs() as i64)
+        .execute(pool)
+        .await?;
+    if result.rows_affected() > 0 {
+        info!("Removed {} traffic data lines", result.rows_affected());
+        query("VACUUM")
+            .execute(pool)
+            .await?;
+        info!("Completed database vacuum");
+    }
+    Ok(())
 }

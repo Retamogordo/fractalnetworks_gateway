@@ -40,9 +40,22 @@ async fn main() -> Result<()> {
     // and make sure that everything is running as it should.
     let pool_clone = pool.clone();
     rocket::tokio::spawn(async move {
-        match gateway::watchdog(pool_clone, options.watchdog).await {
-            Ok(_) => {},
-            Err(e) => log::error!("{}", e),
+        loop {
+            match gateway::watchdog(&pool_clone, options.watchdog).await {
+                Ok(_) => {},
+                Err(e) => log::error!("{}", e),
+            }
+        }
+    });
+
+    // launch garbage collector, which prunes old traffic stats from database
+    let pool_clone = pool.clone();
+    rocket::tokio::spawn(async move {
+        loop {
+            match gateway::garbage(&pool_clone, Duration::from_secs(60 * 60)).await {
+                Ok(_) => {},
+                Err(e) => log::error!("{}", e),
+            }
         }
     });
 
