@@ -390,18 +390,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fallible-iterator"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
-
-[[package]]
-name = "fallible-streaming-iterator"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
-
-[[package]]
 name = "figment"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -539,7 +527,6 @@ dependencies = [
  "parse_duration",
  "rand_core",
  "rocket",
- "rusqlite",
  "serde",
  "serde_json",
  "serde_with",
@@ -1380,21 +1367,6 @@ dependencies = [
  "time",
  "tokio",
  "uncased",
-]
-
-[[package]]
-name = "rusqlite"
-version = "0.24.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5f38ee71cbab2c827ec0ac24e76f82eca723cee92c509a65f67dee393c25112"
-dependencies = [
- "bitflags",
- "fallible-iterator",
- "fallible-streaming-iterator",
- "hashlink",
- "libsqlite3-sys",
- "memchr",
- "smallvec",
 ]
 
 [[package]]
