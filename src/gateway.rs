@@ -11,11 +11,19 @@ use std::net::Ipv4Addr;
 use std::path::Path;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tera::Tera;
 
 const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
+    pub static ref TERA_TEMPLATES: Tera = {
+        let mut tera = Tera::default();
+        tera.add_raw_templates([
+            ("iptables.save.tera", include_str!("../templates/iptables.save.tera")),
+        ]).unwrap();
+        tera
+    };
 }
 const TRAFFIC_RETENTION: Duration = Duration::from_secs(24 * 60 * 60);
 
