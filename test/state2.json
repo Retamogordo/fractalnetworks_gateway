@@ -44,7 +44,7 @@
         ],
         "proxy": {
             "https://gitlab.mydomain.com": ["10.0.0.1:8000"],
-            "http://chat.mydomain.com": ["10.0.0.1:7000"],
+            "http://chat.mydomain.com": ["10.0.0.3:7000"],
             "ssh://git.mydomain.com": ["10.0.0.1:2020"]
         }
     }

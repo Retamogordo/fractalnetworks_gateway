@@ -6,11 +6,16 @@ use rocket::serde::Deserialize;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+
+pub const IPTABLES_SAVE_PATH: &'static str = "/usr/sbin/iptables-save";
+pub const IPTABLES_RESTORE_PATH: &'static str = "/usr/sbin/iptables-restore";
+pub const IP_PATH: &'static str = "/usr/sbin/ip";
 
 pub async fn netns_add(name: &str) -> Result<()> {
     info!("netns add {}", name);
-    let success = Command::new("/usr/sbin/ip")
+    let success = Command::new(IP_PATH)
         .arg("netns")
         .arg("add")
         .arg(name)
@@ -24,7 +29,7 @@ pub async fn netns_add(name: &str) -> Result<()> {
 }
 
 pub async fn netns_exists(name: &str) -> Result<bool> {
-    let success = Command::new("/usr/sbin/ip")
+    let success = Command::new(IP_PATH)
         .arg("netns")
         .arg("exec")
         .arg(name)
@@ -37,7 +42,7 @@ pub async fn netns_exists(name: &str) -> Result<bool> {
 
 pub async fn netns_del(name: &str) -> Result<()> {
     info!("netns del {}", name);
-    let success = Command::new("/usr/sbin/ip")
+    let success = Command::new(IP_PATH)
         .arg("netns")
         .arg("del")
         .arg(name)
@@ -63,7 +68,7 @@ pub async fn netns_write_file(netns: &str, filename: &Path, data: &str) -> Resul
 }
 
 pub async fn netns_list() -> Result<Vec<NetnsItem>> {
-    let output = Command::new("/usr/sbin/ip")
+    let output = Command::new(IP_PATH)
         .arg("--json")
         .arg("netns")
         .arg("list")
@@ -82,7 +87,7 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
 
 pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Result<()> {
     info!("addr add {:?}, {}, {}", netns, interface, addr);
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
     }
@@ -103,7 +108,7 @@ pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Resul
 
 pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
     info!("bridge_add({:?}, {})", netns, interface);
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
     }
@@ -127,7 +132,7 @@ pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
 }
 
 pub async fn bridge_exists(netns: Option<&str>, name: &str) -> Result<bool> {
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
     }
@@ -155,7 +160,7 @@ pub struct InterfaceShow {
 }
 
 pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool> {
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     command.arg("--json");
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
@@ -176,7 +181,7 @@ pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool
 
 pub async fn interface_set_up(netns: Option<&str>, interface: &str) -> Result<()> {
     info!("interface_up({:?}, {})", netns, interface);
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
     }
@@ -215,7 +220,7 @@ fn test_ip_addr() {
 }
 
 pub async fn addr_list(netns: Option<&str>, interface: &str) -> Result<Vec<IpNet>> {
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     command.arg("--json");
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
@@ -254,7 +259,7 @@ struct LinkInfo {
 }
 
 pub async fn link_get_master(netns: Option<&str>, interface: &str) -> Result<Option<String>> {
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     command.arg("--json");
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
@@ -285,7 +290,7 @@ pub async fn link_get_master(netns: Option<&str>, interface: &str) -> Result<Opt
 }
 
 pub async fn link_set_master(netns: Option<&str>, interface: &str, master: &str) -> Result<()> {
-    let mut command = Command::new("/usr/sbin/ip");
+    let mut command = Command::new(IP_PATH);
     command.arg("--json");
     if let Some(netns) = netns {
         command.arg("-n").arg(netns);
@@ -312,7 +317,7 @@ pub async fn link_set_master(netns: Option<&str>, interface: &str, master: &str)
 
 pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
     info!("veth add {}, {}, {}", netns, outer, inner);
-    if !Command::new("/usr/sbin/ip")
+    if !Command::new(IP_PATH)
         .arg("link")
         .arg("add")
         .arg("dev")
@@ -338,7 +343,7 @@ pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
 }
 
 pub async fn veth_exists(netns: &str, name: &str) -> Result<bool> {
-    let output = Command::new("/usr/sbin/ip")
+    let output = Command::new(IP_PATH)
         .arg("-n")
         .arg(netns)
         .arg("link")
@@ -357,7 +362,7 @@ pub async fn veth_exists(netns: &str, name: &str) -> Result<bool> {
 
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     info!("wireguard create {}, {}", netns, name);
-    if !Command::new("/usr/sbin/ip")
+    if !Command::new(IP_PATH)
         .arg("link")
         .arg("add")
         .arg("dev")
@@ -370,7 +375,7 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     {
         return Err(anyhow!("Error creating wireguard interface"));
     }
-    if !Command::new("/usr/sbin/ip")
+    if !Command::new(IP_PATH)
         .arg("link")
         .arg("set")
         .arg(name)
@@ -386,7 +391,7 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
 }
 
 pub async fn wireguard_exists(netns: &str, name: &str) -> Result<bool> {
-    let output = Command::new("/usr/sbin/ip")
+    let output = Command::new(IP_PATH)
         .arg("-n")
         .arg(netns)
         .arg("link")
@@ -405,7 +410,7 @@ pub async fn wireguard_exists(netns: &str, name: &str) -> Result<bool> {
 
 pub async fn wireguard_syncconf(netns: &str, name: &str) -> Result<()> {
     info!("wireguard syncconf {}, {}", netns, name);
-    if !Command::new("/usr/sbin/ip")
+    if !Command::new(IP_PATH)
         .arg("netns")
         .arg("exec")
         .arg(netns)
@@ -423,7 +428,7 @@ pub async fn wireguard_syncconf(netns: &str, name: &str) -> Result<()> {
 }
 
 pub async fn wireguard_stats(netns: &str, name: &str) -> Result<NetworkStats> {
-    let result = Command::new("/usr/sbin/ip")
+    let result = Command::new(IP_PATH)
         .arg("netns")
         .arg("exec")
         .arg(netns)
@@ -439,4 +444,48 @@ pub async fn wireguard_stats(netns: &str, name: &str) -> Result<NetworkStats> {
     let result = String::from_utf8(result.stdout)?;
     let stats = NetworkStats::from_str(&result)?;
     Ok(stats)
+}
+
+pub async fn iptables_save(netns: Option<&str>) -> Result<String> {
+    let mut command = if let Some(netns) = netns {
+        let mut command = Command::new(IP_PATH);
+        command
+            .arg("netns")
+            .arg("exec")
+            .arg(netns)
+            .arg(IPTABLES_SAVE_PATH);
+        command
+    } else {
+        Command::new(IPTABLES_SAVE_PATH)
+    };
+    let output = command.output().await?;
+    if !output.status.success() {
+        return Err(anyhow!("Error saving iptables state"));
+    }
+    let state = String::from_utf8(output.stdout)?;
+    Ok(state)
+}
+
+pub async fn iptables_restore(netns: Option<&str>, state: &str) -> Result<()> {
+    info!("iptables_restore({:?}, {})", netns, state.len());
+    let mut command = if let Some(netns) = netns {
+        let mut command = Command::new(IP_PATH);
+        command
+            .arg("netns")
+            .arg("exec")
+            .arg(netns)
+            .arg(IPTABLES_RESTORE_PATH);
+        command
+    } else {
+        Command::new(IPTABLES_RESTORE_PATH)
+    };
+    let mut handle = command.stdin(std::process::Stdio::piped()).spawn()?;
+    let mut stdin = handle.stdin.take().unwrap();
+    stdin.write_all(state.as_bytes()).await?;
+    drop(stdin);
+    let result = handle.wait().await?;
+    if !result.success() {
+        return Err(anyhow!("Error restoring iptables state"));
+    }
+    Ok(())
 }

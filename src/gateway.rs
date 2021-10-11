@@ -206,7 +206,7 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     let context = tera::Context::from_serialize(&config)?;
     let savefile = TERA_TEMPLATES.render("iptables.save", &context)?;
 
-    netns_write_file(&netns, Path::new("iptables.save"), &savefile).await?;
+    iptables_restore(Some(&netns), &savefile).await?;
 
     Ok(())
 }
