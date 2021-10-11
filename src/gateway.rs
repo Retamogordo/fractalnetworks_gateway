@@ -58,9 +58,7 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     }
 
     // for the rest, apply config
-    for network in state {
-        apply_network(network).await?;
-    }
+    futures::future::try_join_all(state.iter().map(|network| apply_network(network))).await?;
 
     Ok("success".to_string())
 }
