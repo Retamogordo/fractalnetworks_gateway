@@ -11,6 +11,7 @@ use std::str::FromStr;
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
+pub const WIREGUARD_PREFIX: &'static str = "wg";
 const PORT_MAPPING_START: u16 = 2000;
 
 #[derive(Deserialize, Clone, Debug)]
@@ -69,6 +70,10 @@ impl NetworkState {
         format!("{}{}", NETNS_PREFIX, self.listen_port)
     }
 
+    pub fn wgif_name(&self) -> String {
+        format!("{}{}", WIREGUARD_PREFIX, self.listen_port)
+    }
+
     pub fn veth_name(&self) -> String {
         format!("{}{}", VETH_PREFIX, self.listen_port)
     }
@@ -92,7 +97,7 @@ impl NetworkState {
     pub fn port_config(&self) -> PortConfig {
         PortConfig {
             interface_in: self.veth_name(),
-            interface_out: crate::gateway::WIREGUARD_INTERFACE.to_string(),
+            interface_out: self.wgif_name(),
             ip_source: self.address.first().unwrap().addr(),
             mappings: self
                 .port_mappings()

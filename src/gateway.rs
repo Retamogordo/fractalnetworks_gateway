@@ -13,7 +13,6 @@ use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tera::Tera;
 
-pub const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
@@ -102,36 +101,34 @@ pub async fn apply_netns(network: &NetworkState) -> Result<()> {
 
 pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
+    let wgif = network.wgif_name();
 
     // make sure that the wireguard interface works
-    if !wireguard_exists(&netns, WIREGUARD_INTERFACE).await? {
+    if !wireguard_exists(&netns, &wgif).await? {
         info!("Wireguard network does not exist");
         // create wireguard config in netns
-        wireguard_create(&netns, WIREGUARD_INTERFACE).await?;
+        wireguard_create(&netns, &wgif).await?;
     }
 
-    apply_interface_up(Some(&netns), WIREGUARD_INTERFACE)
+    apply_interface_up(Some(&netns), &wgif)
         .await
         .context("Setting wireguard interface UP")?;
 
     // write wireguard config
     netns_write_file(
         &netns,
-        Path::new("wireguard/ens0.conf"),
+        Path::new(&format!("wireguard/{}.conf", &wgif)),
         &network.to_config(),
     )
     .await?;
 
     // set wireguard interface addresses to allow kernel ingress traffic
-    apply_addr(Some(&netns), WIREGUARD_INTERFACE, &network.address)
+    apply_addr(Some(&netns), &wgif, &network.address)
         .await
         .context("Applying wireguard interface addresses")?;
 
     // sync config of wireguard netns
-    wireguard_syncconf(&netns, WIREGUARD_INTERFACE).await?;
-
-    // fetch stats to make sure interface is really up
-    let _stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
+    wireguard_syncconf(&netns, &wgif).await?;
 
     Ok(())
 }
@@ -225,14 +222,18 @@ pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
     let netns_items = netns_list().await?;
     for netns in &netns_items {
         if netns.name.starts_with(NETNS_PREFIX) {
-            watchdog_netns(pool, &netns.name).await?;
+            match watchdog_netns(pool, &netns.name).await {
+                Ok(_) => {}
+                Err(e) => error!("{:?}", e),
+            }
         }
     }
     Ok(())
 }
 
 pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
-    let stats = wireguard_stats(&netns, WIREGUARD_INTERFACE).await?;
+    let wgif = format!("wg{}", &netns[8..]);
+    let stats = wireguard_stats(&netns, &wgif).await?;
     for peer in stats.peers() {
         watchdog_peer(pool, &stats, &peer).await?;
     }

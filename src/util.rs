@@ -474,7 +474,8 @@ pub async fn iptables_restore(netns: Option<&str>, state: &str) -> Result<()> {
             .arg("netns")
             .arg("exec")
             .arg(netns)
-            .arg(IPTABLES_RESTORE_PATH);
+            .arg(IPTABLES_RESTORE_PATH)
+            .arg("-w");
         command
     } else {
         Command::new(IPTABLES_RESTORE_PATH)
