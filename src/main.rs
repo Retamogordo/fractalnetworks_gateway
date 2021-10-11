@@ -1,3 +1,26 @@
+//! # Gateway
+//!
+//! This crate implements a gateway daemon that manages wireguard connections.
+//! It is meant to run on leaf machines and controlled via a centralized
+//! manager.
+//!
+//! It uses [rocket] to server a REST HTTP API with support for HTTP/2. It uses
+//! [tokio] as the async runtime, and [sqlx] to talk to a local SQLite database
+//! to store traffic data.
+//!
+//! At runtime, it initialises the database if needed and launches the REST
+//! API. When it gets a request to apply some state via the [api::apply]
+//! endpoint (via a POST request to `/api/v1/state.json`), it differentially
+//! applies that state, meaning that any items (network namespaces, interfaces,
+//! networks, peers, addresses, port mappings) that are not in the new config
+//! are removed, and new ones are added. Applying the same config twice should
+//! not result in any change or disruption to connections.
+//!
+//! For monitoring purposes, there are two endpoints: the [api::traffic]
+//! endpoint allows for monitoring of traffic data for every network, device
+//! and the gateway as a whole. Polling this endpoint is recommended. It allows
+//! for filtering traffic data by timestamp, such that only newer data is read.
+
 mod api;
 mod gateway;
 mod token;
