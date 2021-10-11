@@ -6,12 +6,12 @@ use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
-const PORT_MAPPING_START: usize = 2000;
+const PORT_MAPPING_START: u16 = 2000;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct NetworkState {
@@ -34,6 +34,21 @@ pub struct PeerState {
     #[serde(with = "serde_with::rust::seq_display_fromstr")]
     pub allowed_ips: Vec<IpNet>,
     pub endpoint: Option<SocketAddr>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct PortConfig {
+    interface_in: String,
+    interface_out: String,
+    ip_source: IpAddr,
+    mappings: Vec<PortMapping>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct PortMapping {
+    port_in: u16,
+    port_out: u16,
+    ip_out: IpAddr,
 }
 
 impl NetworkState {
@@ -64,14 +79,28 @@ impl NetworkState {
         Ipv4Net::new(addr, BRIDGE_NET.prefix_len()).unwrap()
     }
 
-    pub fn port_mappings(&self) -> Vec<(usize, SocketAddr)> {
+    pub fn port_mappings(&self) -> Vec<(u16, SocketAddr)> {
         self.proxy
             .iter()
             .map(|(_, addrs)| addrs.iter())
             .flatten()
             .enumerate()
-            .map(|(i, addr)| (PORT_MAPPING_START + i, *addr))
+            .map(|(i, addr)| (PORT_MAPPING_START + i as u16, *addr))
             .collect()
+    }
+
+    pub fn port_config(&self) -> PortConfig {
+        PortConfig {
+            interface_in: self.veth_name(),
+            interface_out: crate::gateway::WIREGUARD_INTERFACE.to_string(),
+            ip_source: self.address.first().unwrap().addr(),
+            mappings: self.port_mappings().iter()
+                .map(|(port, sock)| PortMapping {
+                    port_in: *port,
+                    port_out: sock.port(),
+                    ip_out: sock.ip(),
+                }).collect(),
+        }
     }
 }
 

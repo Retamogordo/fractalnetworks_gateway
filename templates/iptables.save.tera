@@ -4,9 +4,9 @@
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 {% for mapping in mappings %}
--A PREROUTING -i {{ mapping.interface_in }} -p tcp -m tcp --dport {{ mapping.port_in }} -j DNAT --to-destination {{ mapping.ip_out }}:{{ mapping.port_out }}
+-A PREROUTING -i {{ interface_in }} -p tcp -m tcp --dport {{ mapping.port_in }} -j DNAT --to-destination {{ mapping.ip_out }}:{{ mapping.port_out }}
 {% endfor %}
 {% for mapping in mappings %}
--A POSTROUTING -o {{ mapping.interface_out }} -p tcp -m tcp --dport {{ mapping.port_out }} -j SNAT --to-source {{ mapping.ip_source }}
+-A POSTROUTING -o {{ interface_out }} -p tcp -m tcp --dport {{ mapping.port_out }} -j SNAT --to-source {{ ip_source }}
 {% endfor %}
 COMMIT

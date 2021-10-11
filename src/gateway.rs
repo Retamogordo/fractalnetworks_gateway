@@ -13,14 +13,14 @@ use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tera::Tera;
 
-const WIREGUARD_INTERFACE: &'static str = "ens0";
+pub const WIREGUARD_INTERFACE: &'static str = "ens0";
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
     pub static ref TERA_TEMPLATES: Tera = {
         let mut tera = Tera::default();
         tera.add_raw_templates([
-            ("iptables.save.tera", include_str!("../templates/iptables.save.tera")),
+            ("iptables.save", include_str!("../templates/iptables.save.tera")),
         ]).unwrap();
         tera
     };
@@ -200,7 +200,17 @@ pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &st
 
 pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
-    let mappings = network.port_mappings();
+    let config = network.port_config();
+    let context = tera::Context::from_serialize(&config)?;
+    let savefile = TERA_TEMPLATES.render("iptables.save", &context)?;
+
+    netns_write_file(
+        &netns,
+        Path::new("iptables.save"),
+        &savefile,
+    )
+    .await?;
+
     Ok(())
 }
 
