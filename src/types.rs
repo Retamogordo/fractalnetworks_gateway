@@ -94,12 +94,15 @@ impl NetworkState {
             interface_in: self.veth_name(),
             interface_out: crate::gateway::WIREGUARD_INTERFACE.to_string(),
             ip_source: self.address.first().unwrap().addr(),
-            mappings: self.port_mappings().iter()
+            mappings: self
+                .port_mappings()
+                .iter()
                 .map(|(port, sock)| PortMapping {
                     port_in: *port,
                     port_out: sock.port(),
                     ip_out: sock.ip(),
-                }).collect(),
+                })
+                .collect(),
         }
     }
 }

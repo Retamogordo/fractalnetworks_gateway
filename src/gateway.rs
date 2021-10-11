@@ -19,9 +19,11 @@ lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
     pub static ref TERA_TEMPLATES: Tera = {
         let mut tera = Tera::default();
-        tera.add_raw_templates([
-            ("iptables.save", include_str!("../templates/iptables.save.tera")),
-        ]).unwrap();
+        tera.add_raw_templates([(
+            "iptables.save",
+            include_str!("../templates/iptables.save.tera"),
+        )])
+        .unwrap();
         tera
     };
 }
@@ -204,12 +206,7 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     let context = tera::Context::from_serialize(&config)?;
     let savefile = TERA_TEMPLATES.render("iptables.save", &context)?;
 
-    netns_write_file(
-        &netns,
-        Path::new("iptables.save"),
-        &savefile,
-    )
-    .await?;
+    netns_write_file(&netns, Path::new("iptables.save"), &savefile).await?;
 
     Ok(())
 }
