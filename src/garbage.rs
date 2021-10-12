@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log::*;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{query, SqlitePool};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 

@@ -5,12 +5,10 @@ use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
 use rocket::futures::TryStreamExt;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{query_as, SqlitePool};
 use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
-use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
 use tera::Tera;
 
 const BRIDGE_INTERFACE: &'static str = "ensbr0";

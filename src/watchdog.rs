@@ -1,7 +1,6 @@
 use crate::types::*;
 use crate::util::*;
-use anyhow::{Context, Result};
-use ipnet::{IpNet, Ipv4Net};
+use anyhow::Result;
 use log::*;
 use sqlx::{query, query_as, SqlitePool};
 use std::time::Duration;
