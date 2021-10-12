@@ -162,18 +162,28 @@ impl Forwarding {
 
     pub fn add_https(&mut self, url: &Url, socket: SocketAddr) {
         let host = url.host_str().unwrap();
-        let upstream = self.https_forwarding.entry(host.to_string())
-            .or_insert_with(|| format!("https_{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, host.as_bytes())));
-        let mut servers = self.https_upstream.entry(upstream.to_string())
+        let upstream = self
+            .https_forwarding
+            .entry(host.to_string())
+            .or_insert_with(|| {
+                format!(
+                    "https_{}",
+                    base32::encode(
+                        base32::Alphabet::RFC4648 { padding: false },
+                        host.as_bytes()
+                    )
+                )
+            });
+        let mut servers = self
+            .https_upstream
+            .entry(upstream.to_string())
             .or_insert_with(|| vec![]);
         servers.push(socket);
     }
 
-    pub fn add_http(&mut self, url: &Url, socket: SocketAddr) {
-    }
+    pub fn add_http(&mut self, url: &Url, socket: SocketAddr) {}
 
-    pub fn add_ssh(&mut self, url: &Url, socket: SocketAddr) {
-    }
+    pub fn add_ssh(&mut self, url: &Url, socket: SocketAddr) {}
 }
 
 #[derive(Clone, Debug)]
