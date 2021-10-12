@@ -1,10 +1,47 @@
 #!/bin/bash
 
-AMOUNT=100
+AMOUNT=10
 PORT_START=2000
-PEERS=10
+PEERS=3
+
+function show_help() {
+  printf "USAGE: generate.sh [-a AMOUNT] [-p PEERS]\n"
+  printf "Generates random state for gateway with specific number of\n"
+  printf "networks and peers.\n\n"
+  printf "Options\n"
+  printf " -a, --amount AMOUNT\n"
+  printf "  Number of networks to create\n"
+  printf " -p, --peers PEERS\n"
+  printf "  Number of peers for each network\n"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -a|--amount)
+      AMOUNT="$2"
+      shift
+      shift
+      ;;
+    -p|--peers)
+      PEERS="$2"
+      shift
+      shift
+      ;;
+    -h|--help)
+      show_help
+      exit
+      ;;
+    *)
+      show_help
+      exit -1
+      ;;
+  esac
+done
 
 printf "{"
+
 for n in $(seq $AMOUNT); do
     PORT=$(($PORT_START + $n))
     printf '"%s": {' "$PORT"
@@ -36,33 +73,3 @@ for n in $(seq $AMOUNT); do
 done
 
 printf '}'
-exit
-
-    "12312": {
-        "private_key": "2PGDeXYynfKqJH4k0sUgKeRKpL4DUGGLTKnPjKViZFk=",
-        "address": ["10.0.0.1/16"],
-        "peers": [
-            {
-                "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",
-                "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
-                "endpoint": "170.24.12.42:41213",
-                "allowed_ips": ["10.0.0.1/32"]
-            },
-            {
-                "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",
-                "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
-                "endpoint": "170.24.12.42:41213",
-                "allowed_ips": ["10.0.0.1/32"]
-            },
-            {
-                "public_key": "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=",
-                "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
-                "endpoint": "170.24.12.42:41213",
-                "allowed_ips": ["10.0.0.1/32"]
-            }
-        ],
-        "proxy": {
-            "gitlab.mydomain.com": ["10.0.0.1:8000", "10.0.0.2:5000"],
-            "chat.mydomain.com": ["10.0.0.2:7000"]
-        }
-    },
