@@ -4,10 +4,12 @@ use anyhow::anyhow;
 use ipnet::IpNet;
 use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
+use log::*;
 use rocket::serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use url::Url;
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
@@ -23,7 +25,7 @@ pub struct NetworkState {
     #[serde(with = "serde_with::rust::seq_display_fromstr")]
     pub address: Vec<IpNet>,
     pub peers: Vec<PeerState>,
-    pub proxy: HashMap<String, Vec<SocketAddr>>,
+    pub proxy: HashMap<Url, Vec<SocketAddr>>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -84,13 +86,13 @@ impl NetworkState {
         Ipv4Net::new(addr, BRIDGE_NET.prefix_len()).unwrap()
     }
 
-    pub fn port_mappings(&self) -> Vec<(u16, SocketAddr)> {
+    pub fn port_mappings(&self) -> Vec<(Url, u16, SocketAddr)> {
         self.proxy
             .iter()
-            .map(|(_, addrs)| addrs.iter())
+            .map(|(url, addrs)| addrs.iter().map(|a| (url.clone(), a)))
             .flatten()
             .enumerate()
-            .map(|(i, addr)| (PORT_MAPPING_START + i as u16, *addr))
+            .map(|(i, (url, addr))| (url, PORT_MAPPING_START + i as u16, *addr))
             .collect()
     }
 
@@ -102,7 +104,7 @@ impl NetworkState {
             mappings: self
                 .port_mappings()
                 .iter()
-                .map(|(port, sock)| PortMapping {
+                .map(|(_, port, sock)| PortMapping {
                     port_in: *port,
                     port_out: sock.port(),
                     ip_out: sock.ip(),
@@ -128,6 +130,49 @@ impl PeerState {
             writeln!(config, "Endpoint = {}", endpoint).unwrap();
         }
         config
+    }
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct Forwarding {
+    https_forwarding: BTreeMap<String, String>,
+    https_upstream: BTreeMap<String, Vec<SocketAddr>>,
+    http_forwarding: BTreeMap<String, SocketAddr>,
+    ssh_forwarding: BTreeMap<String, SocketAddr>,
+}
+
+impl Forwarding {
+    pub fn new() -> Self {
+        Forwarding {
+            ..Default::default()
+        }
+    }
+
+    pub fn add(&mut self, network: &NetworkState) {
+        for (url, port, sock) in &network.port_mappings() {
+            let sock = SocketAddr::new(network.veth_ipv4net().addr().into(), *port);
+            match url.scheme() {
+                "https" => self.add_https(url, sock),
+                "http" => self.add_http(url, sock),
+                "ssh" => self.add_ssh(url, sock),
+                other => error!("Unrecognized URL scheme: {}", url),
+            }
+        }
+    }
+
+    pub fn add_https(&mut self, url: &Url, socket: SocketAddr) {
+        let host = url.host_str().unwrap();
+        let upstream = self.https_forwarding.entry(host.to_string())
+            .or_insert_with(|| format!("https_{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, host.as_bytes())));
+        let mut servers = self.https_upstream.entry(upstream.to_string())
+            .or_insert_with(|| vec![]);
+        servers.push(socket);
+    }
+
+    pub fn add_http(&mut self, url: &Url, socket: SocketAddr) {
+    }
+
+    pub fn add_ssh(&mut self, url: &Url, socket: SocketAddr) {
     }
 }
 

@@ -490,3 +490,15 @@ pub async fn iptables_restore(netns: Option<&str>, state: &str) -> Result<()> {
     }
     Ok(())
 }
+
+pub async fn nginx_reload() -> Result<()> {
+    let status = Command::new("nginx")
+        .arg("-s")
+        .arg("reload")
+        .status()
+        .await?;
+    if !status.success() {
+        return Err(anyhow!("Error reloading nginx"));
+    }
+    Ok(())
+}

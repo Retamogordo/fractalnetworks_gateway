@@ -23,8 +23,8 @@
             }
         ],
         "proxy": {
-            "gitlab.mydomain.com": ["10.0.0.1:8000", "10.0.0.2:5000"],
-            "chat.mydomain.com": ["10.0.0.2:7000"]
+            "https://gitlab.mydomain.com": ["10.0.0.1:8000"],
+            "https://chat.mydomain.com": ["10.0.0.2:7000"]
         }
     },
     "1234": {

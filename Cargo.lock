@@ -120,6 +120,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4521f3e3d031370679b3b140beb36dfe4801b09ac77e30c61941f97df3ef28b"
 
 [[package]]
+name = "base32"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23ce669cd6c8588f79e15cf450314f9638f967fc5770ff1c7c1deb0925ea7cfa"
+
+[[package]]
 name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -642,6 +648,7 @@ name = "gateway"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base32",
  "base64",
  "env_logger",
  "futures",
@@ -660,6 +667,7 @@ dependencies = [
  "tera",
  "thiserror",
  "tokio",
+ "url",
  "x25519-dalek-fiat",
 ]
 
@@ -2584,6 +2592,7 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

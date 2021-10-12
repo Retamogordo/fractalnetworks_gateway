@@ -14,14 +14,18 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tera::Tera;
 
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
+const NGINX_CONF_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
     pub static ref TERA_TEMPLATES: Tera = {
         let mut tera = Tera::default();
-        tera.add_raw_templates([(
-            "iptables.save",
-            include_str!("../templates/iptables.save.tera"),
-        )])
+        tera.add_raw_templates([
+            (
+                "iptables.save",
+                include_str!("../templates/iptables.save.tera"),
+            ),
+            ("nginx.conf", include_str!("../templates/nginx.conf.tera")),
+        ])
         .unwrap();
         tera
     };
@@ -58,6 +62,8 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
 
     // for the rest, apply config
     futures::future::try_join_all(state.iter().map(|network| apply_network(network))).await?;
+
+    apply_nginx(state).await?;
 
     Ok("success".to_string())
 }
@@ -200,9 +206,20 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     let config = network.port_config();
     let context = tera::Context::from_serialize(&config)?;
     let savefile = TERA_TEMPLATES.render("iptables.save", &context)?;
-
     iptables_restore(Some(&netns), &savefile).await?;
 
+    Ok(())
+}
+
+pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
+    let mut forwarding = Forwarding::new();
+    for network in networks {
+        forwarding.add(network);
+    }
+    let context = tera::Context::from_serialize(&forwarding)?;
+    let config = TERA_TEMPLATES.render("nginx.conf", &context)?;
+    tokio::fs::write(Path::new(NGINX_CONF_PATH), config.as_bytes()).await?;
+    nginx_reload().await?;
     Ok(())
 }
 
