@@ -1,5 +1,5 @@
 stream {
-  map $ssl_preread_server_name $backend { {% for domain, upstream in https_forwarding %}
+  map $ssl_preread_server_name $https_backend { {% for domain, upstream in https_forwarding %}
     {{ domain }} {{ upstream }};{% endfor %}
   }
   {% for upstream, servers in https_upstream %}
@@ -11,7 +11,7 @@ stream {
     listen 443;
     proxy_connect_timeout 1s;
     proxy_timeout 3s;
-    proxy_pass $backend;
+    proxy_pass $https_backend;
     ssl_preread on;
   }
 }
