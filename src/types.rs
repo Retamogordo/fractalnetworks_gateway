@@ -149,13 +149,13 @@ impl Forwarding {
     }
 
     pub fn add(&mut self, network: &NetworkState) {
-        for (url, port, sock) in &network.port_mappings() {
+        for (url, port, _sock) in &network.port_mappings() {
             let sock = SocketAddr::new(network.veth_ipv4net().addr().into(), *port);
             match url.scheme() {
                 "https" => self.add_https(url, sock),
                 "http" => self.add_http(url, sock),
                 "ssh" => self.add_ssh(url, sock),
-                other => error!("Unrecognized URL scheme: {}", url),
+                _other => error!("Unrecognized URL scheme: {}", url),
             }
         }
     }
@@ -174,16 +174,16 @@ impl Forwarding {
                     )
                 )
             });
-        let mut servers = self
+        let servers = self
             .https_upstream
             .entry(upstream.to_string())
             .or_insert_with(|| vec![]);
         servers.push(socket);
     }
 
-    pub fn add_http(&mut self, url: &Url, socket: SocketAddr) {}
+    pub fn add_http(&mut self, _url: &Url, _socket: SocketAddr) {}
 
-    pub fn add_ssh(&mut self, url: &Url, socket: SocketAddr) {}
+    pub fn add_ssh(&mut self, _url: &Url, _socket: SocketAddr) {}
 }
 
 #[derive(Clone, Debug)]
