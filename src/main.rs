@@ -27,6 +27,8 @@ mod token;
 mod types;
 mod util;
 pub mod wireguard;
+mod garbage;
+mod watchdog;
 
 use anyhow::Result;
 use sqlx::SqlitePool;
@@ -63,7 +65,7 @@ async fn main() -> Result<()> {
     let pool_clone = pool.clone();
     rocket::tokio::spawn(async move {
         loop {
-            match gateway::watchdog(&pool_clone, options.watchdog).await {
+            match watchdog::watchdog(&pool_clone, options.watchdog).await {
                 Ok(_) => {}
                 Err(e) => log::error!("{}", e),
             }
@@ -74,7 +76,7 @@ async fn main() -> Result<()> {
     let pool_clone = pool.clone();
     rocket::tokio::spawn(async move {
         loop {
-            match gateway::garbage(&pool_clone, Duration::from_secs(60 * 60)).await {
+            match garbage::garbage(&pool_clone, Duration::from_secs(60 * 60)).await {
                 Ok(_) => {}
                 Err(e) => log::error!("{}", e),
             }

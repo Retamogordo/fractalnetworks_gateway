@@ -63,6 +63,7 @@ for n in $(seq $AMOUNT); do
     printf '],'
     printf '"proxy": {'
     printf '"ssh://git.domain%s.com": ["10.0.0.1:8000", "10.0.0.2:7000"],' $n
+    printf '"https://gitlab.domain%s.com": ["10.0.0.2:443", "10.0.0.5:443"],' $n
     printf '"https://chat.domain%s.com": ["10.0.0.3:6000"]' $n
     printf '}'
     if [[ $n == $AMOUNT ]]; then
