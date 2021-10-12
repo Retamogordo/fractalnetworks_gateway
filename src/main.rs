@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
     let pool_clone = pool.clone();
     rocket::tokio::spawn(async move {
         loop {
-            match garbage::garbage(&pool_clone, Duration::from_secs(60 * 60)).await {
+            match garbage::garbage(&pool_clone, garbage::GARBAGE_INTERVAL).await {
                 Ok(_) => {}
                 Err(e) => log::error!("{}", e),
             }

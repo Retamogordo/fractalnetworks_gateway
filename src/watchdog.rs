@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::util::*;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::*;
 use sqlx::{query, query_as, SqlitePool};
 use std::time::Duration;
@@ -11,6 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub async fn watchdog(pool: &SqlitePool, duration: Duration) -> Result<()> {
     info!("Launching watchdog every {}s", duration.as_secs());
     let mut interval = tokio::time::interval(duration);
+    interval.tick().await;
     loop {
         interval.tick().await;
         watchdog_run(&pool).await?;
@@ -45,13 +46,44 @@ pub async fn watchdog_peer(
     stats: &NetworkStats,
     peer: &PeerStats,
 ) -> Result<()> {
+    // insert network pubkey
+    query(
+        "INSERT OR IGNORE INTO gateway_network(network_pubkey)
+            VALUES (?)")
+        .bind(stats.public_key.as_slice())
+        .execute(pool)
+        .await?;
+    let network_id: (i64,) = query_as(
+        "SELECT network_id FROM gateway_network
+            WHERE network_pubkey = ?")
+        .bind(stats.public_key.as_slice())
+        .fetch_one(pool)
+        .await
+        .context("Looking up network_id")?;
+    let network_id = network_id.0;
+
+    query(
+        "INSERT OR IGNORE INTO gateway_device(device_pubkey)
+            VALUES (?)")
+        .bind(peer.public_key.as_slice())
+        .execute(pool)
+        .await?;
+    let device_id: (i64,) = query_as(
+        "SELECT device_id FROM gateway_device
+            WHERE device_pubkey = ?")
+        .bind(peer.public_key.as_slice())
+        .fetch_one(pool)
+        .await
+        .context("Looking up device_id")?;
+    let device_id = device_id.0;
+
     // find most recent entry for this peer
     let prev: Option<(i64, i64, i64)> = query_as(
         "SELECT traffic_rx_raw, traffic_tx_raw, MAX(time) FROM gateway_traffic
-            WHERE network_pubkey = ? AND device_pubkey = ?",
+            WHERE network_id = ? AND device_id = ?",
     )
-    .bind(stats.public_key.as_slice())
-    .bind(peer.public_key.as_slice())
+    .bind(network_id)
+    .bind(device_id)
     .fetch_optional(pool)
     .await?;
     let (traffic_rx, traffic_tx) = if let Some((traffic_rx_raw, traffic_tx_raw, _time)) = prev {
@@ -68,8 +100,8 @@ pub async fn watchdog_peer(
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?;
     query(
         "INSERT INTO gateway_traffic(
-            network_pubkey,
-            device_pubkey,
+            network_id,
+            device_id,
             time,
             traffic_rx,
             traffic_rx_raw,
@@ -77,8 +109,8 @@ pub async fn watchdog_peer(
             traffic_tx_raw)
         VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind(stats.public_key.as_slice())
-    .bind(peer.public_key.as_slice())
+    .bind(network_id)
+    .bind(device_id)
     .bind(timestamp.as_secs() as i64)
     .bind(traffic_rx as i64)
     .bind(peer.transfer_rx as i64)
