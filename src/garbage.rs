@@ -36,20 +36,22 @@ pub async fn garbage_collect(pool: &SqlitePool) -> Result<()> {
         "DELETE FROM gateway_network
             WHERE NOT EXISTS (
                 SELECT 1 FROM gateway_traffic
-                WHERE gateway_traffic.network_id = gateway_network.network_id)")
-        .bind(cutoff.as_secs() as i64)
-        .execute(pool)
-        .await?;
+                WHERE gateway_traffic.network_id = gateway_network.network_id)",
+    )
+    .bind(cutoff.as_secs() as i64)
+    .execute(pool)
+    .await?;
     info!("Removed {} network pubkeys", result.rows_affected());
 
     let result = query(
         "DELETE FROM gateway_device
             WHERE NOT EXISTS (
                 SELECT 1 FROM gateway_traffic
-                WHERE gateway_traffic.device_id = gateway_device.device_id)")
-        .bind(cutoff.as_secs() as i64)
-        .execute(pool)
-        .await?;
+                WHERE gateway_traffic.device_id = gateway_device.device_id)",
+    )
+    .bind(cutoff.as_secs() as i64)
+    .execute(pool)
+    .await?;
     info!("Removed {} device pubkeys", result.rows_affected());
 
     query("VACUUM").execute(pool).await?;

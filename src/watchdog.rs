@@ -49,32 +49,36 @@ pub async fn watchdog_peer(
     // insert network pubkey
     query(
         "INSERT OR IGNORE INTO gateway_network(network_pubkey)
-            VALUES (?)")
-        .bind(stats.public_key.as_slice())
-        .execute(pool)
-        .await?;
+            VALUES (?)",
+    )
+    .bind(stats.public_key.as_slice())
+    .execute(pool)
+    .await?;
     let network_id: (i64,) = query_as(
         "SELECT network_id FROM gateway_network
-            WHERE network_pubkey = ?")
-        .bind(stats.public_key.as_slice())
-        .fetch_one(pool)
-        .await
-        .context("Looking up network_id")?;
+            WHERE network_pubkey = ?",
+    )
+    .bind(stats.public_key.as_slice())
+    .fetch_one(pool)
+    .await
+    .context("Looking up network_id")?;
     let network_id = network_id.0;
 
     query(
         "INSERT OR IGNORE INTO gateway_device(device_pubkey)
-            VALUES (?)")
-        .bind(peer.public_key.as_slice())
-        .execute(pool)
-        .await?;
+            VALUES (?)",
+    )
+    .bind(peer.public_key.as_slice())
+    .execute(pool)
+    .await?;
     let device_id: (i64,) = query_as(
         "SELECT device_id FROM gateway_device
-            WHERE device_pubkey = ?")
-        .bind(peer.public_key.as_slice())
-        .fetch_one(pool)
-        .await
-        .context("Looking up device_id")?;
+            WHERE device_pubkey = ?",
+    )
+    .bind(peer.public_key.as_slice())
+    .fetch_one(pool)
+    .await
+    .context("Looking up device_id")?;
     let device_id = device_id.0;
 
     // find most recent entry for this peer
