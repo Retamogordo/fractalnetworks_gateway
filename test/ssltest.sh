@@ -49,6 +49,9 @@ for n in $(seq $PEERS); do
     ip netns del "node-$n"
     ip netns add "node-$n"
     mkdir -p "/etc/netns/node-$n/wireguard"
+    mkdir -p "/etc/netns/node-$n/opt"
+    # create ssl certificate
+    openssl req -x509 -newkey rsa:2048 -keyout /etc/netns/node-$n/opt/key.pem -out /etc/netns/node-$n/opt/cert.pem -days 365 -nodes -batch
 done
 
 printf "{" > ssltest.json
@@ -79,11 +82,13 @@ for p in $(seq $PEERS); do
     printf "AllowedIPs = 10.0.0.0/16\n" >> $WGCONF
     printf "Endpoint = 127.0.0.1:%s\n" "$NETWORK_PORT" >> $WGCONF
     printf "PersistentKeepalive = 25\n" >> $WGCONF
+    chmod 0500 $WGCONF
 done
 printf '],' >> ssltest.json
 printf '"proxy": {' >> ssltest.json
-printf '"git.domain%s.com": ["10.0.0.1:8000", "10.0.0.2:7000"],' $n >> ssltest.json
-printf '"chat.domain%s.com": ["10.0.0.3:6000"]' $n >> ssltest.json
+printf '"https://a.fractal.com": ["10.0.0.2:443"],' $n >> ssltest.json
+printf '"https://b.fractal.com": ["10.0.0.3:443"],' $n >> ssltest.json
+printf '"https://c.fractal.com": ["10.0.0.4:443"]' $n >> ssltest.json
 printf '}' >> ssltest.json
 printf '}' >> ssltest.json
 printf '}' >> ssltest.json
@@ -98,8 +103,12 @@ for n in $(seq $PEERS); do
     ip link add "node$n" type wireguard
     ip link set "node$n" netns "node-$n" name "wg0"
     ip -n "node-$n" link set wg0 up
+    ip -n "node-$n" link set lo up
     ip -n "node-$n" addr add 10.0.0.$(($n + 1))/16 dev wg0
     ip netns exec "node-$n" wg-quick strip wg0 | ip netns exec "node-$n" wg syncconf wg0 /dev/stdin
-    ip netns exec node-$n ping -c 4 10.0.0.1
+    #ip netns exec node-$n ping -c 1 10.0.0.1
+    ip netns exec "node-$n" openssl s_server -key /etc/opt/key.pem -cert /etc/opt/cert.pem -accept 443 -www &
 done
 
+# wait for servers to exit
+wait < <(jobs -p)
