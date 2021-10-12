@@ -22,13 +22,13 @@
 //! for filtering traffic data by timestamp, such that only newer data is read.
 
 mod api;
+mod garbage;
 mod gateway;
 mod token;
 mod types;
 mod util;
-pub mod wireguard;
-mod garbage;
 mod watchdog;
+pub mod wireguard;
 
 use anyhow::Result;
 use sqlx::SqlitePool;

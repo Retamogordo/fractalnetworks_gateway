@@ -89,4 +89,3 @@ pub async fn watchdog_peer(
     .await?;
     Ok(())
 }
-
