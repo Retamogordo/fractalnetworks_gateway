@@ -229,7 +229,9 @@ pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo
 
     let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>(
         "SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time
-            FROM gateway_traffic JOIN gateway_network JOIN gateway_device
+            FROM gateway_traffic
+            JOIN gateway_network ON gateway_network.network_id = gateway_traffic.network_id
+            JOIN gateway_device ON gateway_device.device_id = gateway_traffic.device_id
             WHERE time > ?",
     )
     .bind(start_time as i64)
@@ -241,7 +243,6 @@ pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo
         let network = base64::encode(&network);
         let device = base64::encode(&device);
         traffic_info.add(network, device, time, traffic);
-        //traffic_info.add
     }
 
     Ok(traffic_info)
