@@ -6,6 +6,13 @@ use sqlx::{query, query_as, SqlitePool};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Minimum amount of traffic to be recorded. This exists because we don't
+/// need to store a traffic entry if no traffic has occured. But because of
+/// the PersistentKeepalive, there will always be some amount of traffic.
+/// Hence, we can set a lower limit of 1000 bytes, below which we don't store
+/// it. The traffic will still accumulate, so no information is lost.
+pub const TRAFFIC_MINIMUM: usize = 1024;
+
 /// Start watchdog process that repeatedly checks the state of the system, with
 /// a configurable interval.
 pub async fn watchdog(pool: &SqlitePool, duration: Duration) -> Result<()> {
@@ -90,6 +97,8 @@ pub async fn watchdog_peer(
     .bind(device_id)
     .fetch_optional(pool)
     .await?;
+
+    // find out how much traffic has occured since last watchdog run
     let (traffic_rx, traffic_tx) = if let Some((traffic_rx_raw, traffic_tx_raw, _time)) = prev {
         let traffic_rx = peer.transfer_rx as i64;
         let traffic_tx = peer.transfer_tx as i64;
@@ -101,6 +110,14 @@ pub async fn watchdog_peer(
     } else {
         (0, 0)
     };
+
+    // if there has been less than the minimum amount of traffic recorded,
+    // don't record it yet.
+    if ((traffic_rx + traffic_tx) as usize) < TRAFFIC_MINIMUM {
+        return Ok(());
+    }
+
+    // insert entry
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?;
     query(
         "INSERT INTO gateway_traffic(
