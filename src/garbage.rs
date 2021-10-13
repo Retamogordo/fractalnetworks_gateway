@@ -4,17 +4,14 @@ use sqlx::{query, SqlitePool};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub const GARBAGE_RETENTION: Duration = Duration::from_secs(24 * 60 * 60);
-pub const GARBAGE_INTERVAL: Duration = Duration::from_secs(60 * 60);
-
 /// Garbage collector. This runs in a configurable interval (by default, once
 /// per hour) and runs garbage_collect().
-pub async fn garbage(pool: &SqlitePool, duration: Duration) -> Result<()> {
+pub async fn garbage(pool: &SqlitePool, duration: Duration, retention: Duration) -> Result<()> {
     info!("Launching garbage collector every {}s", duration.as_secs());
     let mut interval = tokio::time::interval(duration);
     loop {
         interval.tick().await;
-        garbage_collect(&pool).await?;
+        garbage_collect(&pool, retention).await?;
     }
 }
 
@@ -22,10 +19,10 @@ pub async fn garbage(pool: &SqlitePool, duration: Duration) -> Result<()> {
 /// TRAFFIC_RETENTION, and finally performs a VACUUM on the database to ensure
 /// it is as compact as possible. Without this, the database file would keep
 /// growing in size.
-pub async fn garbage_collect(pool: &SqlitePool) -> Result<()> {
+pub async fn garbage_collect(pool: &SqlitePool, retention: Duration) -> Result<()> {
     info!("Running garbage collection");
     let time = SystemTime::now().duration_since(UNIX_EPOCH)?;
-    let cutoff = time - GARBAGE_RETENTION;
+    let cutoff = time - retention;
     let result = query("DELETE FROM gateway_traffic WHERE time < ?")
         .bind(cutoff.as_secs() as i64)
         .execute(pool)

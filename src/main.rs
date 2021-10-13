@@ -49,6 +49,14 @@ struct Options {
     /// Interval to run watchdog at.
     #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration::parse::parse))]
     watchdog: Duration,
+
+    /// Interval to run garbage collection at.
+    #[structopt(long, short, default_value="1h", parse(try_from_str = parse_duration::parse::parse))]
+    garbage: Duration,
+
+    /// Duration for which network data is retained.
+    #[structopt(long, short, default_value="24h", parse(try_from_str = parse_duration::parse::parse))]
+    retention: Duration,
 }
 
 #[rocket::main]
@@ -76,7 +84,7 @@ async fn main() -> Result<()> {
     let pool_clone = pool.clone();
     rocket::tokio::spawn(async move {
         loop {
-            match garbage::garbage(&pool_clone, garbage::GARBAGE_INTERVAL).await {
+            match garbage::garbage(&pool_clone, options.garbage, options.retention).await {
                 Ok(_) => {}
                 Err(e) => log::error!("{}", e),
             }
