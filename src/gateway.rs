@@ -227,9 +227,13 @@ pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo
     let _device_pubkey: Vec<u8> = vec![];
     let _device_pubkey_str = "".to_string();
 
-    let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>("SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time FROM gateway_traffic WHERE time > ?")
-        .bind(start_time as i64)
-        .fetch(pool);
+    let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>(
+        "SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time
+            FROM gateway_traffic JOIN gateway_network JOIN gateway_device
+            WHERE time > ?",
+    )
+    .bind(start_time as i64)
+    .fetch(pool);
 
     while let Some((network, device, rx, tx, time)) = rows.try_next().await? {
         let traffic = Traffic::new(rx as usize, tx as usize);
