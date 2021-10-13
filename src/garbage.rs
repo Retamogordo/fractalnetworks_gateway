@@ -34,9 +34,8 @@ pub async fn garbage_collect(pool: &SqlitePool) -> Result<()> {
 
     let result = query(
         "DELETE FROM gateway_network
-            WHERE NOT EXISTS (
-                SELECT 1 FROM gateway_traffic
-                WHERE gateway_traffic.network_id = gateway_network.network_id)",
+            WHERE network_id NOT IN (
+                SELECT DISTINCT network_id FROM gateway_traffic)",
     )
     .bind(cutoff.as_secs() as i64)
     .execute(pool)
@@ -45,9 +44,8 @@ pub async fn garbage_collect(pool: &SqlitePool) -> Result<()> {
 
     let result = query(
         "DELETE FROM gateway_device
-            WHERE NOT EXISTS (
-                SELECT 1 FROM gateway_traffic
-                WHERE gateway_traffic.device_id = gateway_device.device_id)",
+            WHERE device_id NOT IN (
+                SELECT DISTINCT device_id FROM gateway_traffic)",
     )
     .bind(cutoff.as_secs() as i64)
     .execute(pool)
