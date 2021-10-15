@@ -6,7 +6,7 @@ use std::string::ToString;
 use thiserror::Error;
 use x25519_dalek_fiat::{PublicKey, StaticSecret};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct WireguardPubkey([u8; 32]);
 
 #[derive(Error, Debug)]

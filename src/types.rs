@@ -26,7 +26,8 @@ pub struct NetworkState {
     pub listen_port: u16,
     #[serde_as(as = "Vec<DisplayFromStr>")]
     pub address: Vec<IpNet>,
-    pub peers: Vec<PeerState>,
+    #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
+    pub peers: BTreeMap<WireguardPubkey, PeerState>,
     pub proxy: HashMap<Url, Vec<SocketAddr>>,
 }
 
@@ -36,8 +37,6 @@ pub struct PeerState {
     #[serde(default)]
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub preshared_key: Option<WireguardSecret>,
-    #[serde_as(as = "DisplayFromStr")]
-    pub public_key: WireguardPubkey,
     #[serde_as(as = "Vec<DisplayFromStr>")]
     pub allowed_ips: Vec<IpNet>,
     pub endpoint: Option<SocketAddr>,
@@ -66,8 +65,8 @@ impl NetworkState {
         writeln!(config, "ListenPort = {}", self.listen_port).unwrap();
         writeln!(config, "PrivateKey = {}", self.private_key.to_string()).unwrap();
 
-        for peer in &self.peers {
-            writeln!(config, "\n{}", peer.to_config()).unwrap();
+        for (pubkey, peer) in &self.peers {
+            writeln!(config, "\n{}", peer.to_config(pubkey)).unwrap();
         }
         config
     }
@@ -119,11 +118,11 @@ impl NetworkState {
 }
 
 impl PeerState {
-    pub fn to_config(&self) -> String {
+    pub fn to_config(&self, public_key: &WireguardPubkey) -> String {
         let mut config = String::new();
         use std::fmt::Write;
         writeln!(config, "[Peer]").unwrap();
-        writeln!(config, "PublicKey = {}", self.public_key.to_string()).unwrap();
+        writeln!(config, "PublicKey = {}", public_key.to_string()).unwrap();
         writeln!(
             config,
             "AllowedIPs = {}",
