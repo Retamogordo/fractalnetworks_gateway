@@ -35,12 +35,14 @@ use sqlx::SqlitePool;
 use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
+use tokio::fs::File;
+use std::path::PathBuf;
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
     /// What database file to use to log traffic data to.
-    #[structopt(long, short, default_value = ":memory:")]
-    database: String,
+    #[structopt(long, short)]
+    database: Option<PathBuf>,
 
     /// Security token used to authenticate API requests.
     #[structopt(long, short)]
@@ -64,8 +66,19 @@ async fn main() -> Result<()> {
     env_logger::init();
     let options = Options::from_args();
 
+    // create database if not exists
+    if let Some(database) = &options.database {
+        if !database.exists() {
+            File::create(database).await?;
+        }
+    }
+
+    let database_string = options.database
+        .map(|path| format!("{:?}", path.display()))
+        .unwrap_or_else(|| ":memory:".to_string());
+
     // connect and migrate database
-    let pool = SqlitePool::connect(&options.database).await?;
+    let pool = SqlitePool::connect(&database_string).await?;
     sqlx::migrate!().run(&pool).await?;
 
     // launch watchdog, which after the interval will pull in traffic stats
