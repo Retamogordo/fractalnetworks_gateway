@@ -6,6 +6,7 @@ use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
 use log::*;
 use rocket::serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
@@ -16,25 +17,28 @@ pub const VETH_PREFIX: &'static str = "veth";
 pub const WIREGUARD_PREFIX: &'static str = "wg";
 const PORT_MAPPING_START: u16 = 2000;
 
+#[serde_as]
 #[derive(Deserialize, Clone, Debug)]
 pub struct NetworkState {
-    #[serde(with = "crate::wireguard::from_str")]
+    #[serde_as(as = "DisplayFromStr")]
     pub private_key: WireguardPrivkey,
     #[serde(default)]
     pub listen_port: u16,
-    #[serde(with = "serde_with::rust::seq_display_fromstr")]
+    #[serde_as(as = "Vec<DisplayFromStr>")]
     pub address: Vec<IpNet>,
     pub peers: Vec<PeerState>,
     pub proxy: HashMap<Url, Vec<SocketAddr>>,
 }
 
+#[serde_as]
 #[derive(Deserialize, Clone, Debug)]
 pub struct PeerState {
-    //#[serde(with = "crate::wireguard::from_str")]
-    //pub preshared_key: WireguardSecret,
-    #[serde(with = "crate::wireguard::from_str")]
+    #[serde(default)]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub preshared_key: Option<WireguardSecret>,
+    #[serde_as(as = "DisplayFromStr")]
     pub public_key: WireguardPubkey,
-    #[serde(with = "serde_with::rust::seq_display_fromstr")]
+    #[serde_as(as = "Vec<DisplayFromStr>")]
     pub allowed_ips: Vec<IpNet>,
     pub endpoint: Option<SocketAddr>,
 }

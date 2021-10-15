@@ -283,17 +283,3 @@ impl ToString for WireguardPrivkey {
         self.to_base64()
     }
 }
-
-pub mod from_str {
-    use serde::{Deserialize, Deserializer};
-    use std::str::FromStr;
-    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-    where
-        D: Deserializer<'de>,
-        T: FromStr,
-        <T as FromStr>::Err: std::error::Error,
-    {
-        let s: String = String::deserialize(deserializer)?;
-        T::from_str(s.as_str()).map_err(serde::de::Error::custom)
-    }
-}
