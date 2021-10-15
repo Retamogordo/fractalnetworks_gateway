@@ -36,13 +36,13 @@ use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
 use tokio::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
     /// What database file to use to log traffic data to.
     #[structopt(long, short)]
-    database: Option<PathBuf>,
+    database: Option<String>,
 
     /// Security token used to authenticate API requests.
     #[structopt(long, short)]
@@ -68,13 +68,13 @@ async fn main() -> Result<()> {
 
     // create database if not exists
     if let Some(database) = &options.database {
+        let database = Path::new(&database);
         if !database.exists() {
             File::create(database).await?;
         }
     }
 
     let database_string = options.database
-        .map(|path| format!("{:?}", path.display()))
         .unwrap_or_else(|| ":memory:".to_string());
 
     // connect and migrate database
