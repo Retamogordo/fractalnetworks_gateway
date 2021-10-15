@@ -59,12 +59,11 @@ printf '"%s": {' "$NETWORK_PORT" >> ssltest.json
 NETWORK_KEY=$(wg genkey)
 printf '"private_key": "%s", ' "$NETWORK_KEY" >> ssltest.json
 printf '"address": ["10.0.0.1/16"],' >> ssltest.json
-printf '"peers": [' >> ssltest.json
+printf '"peers": {' >> ssltest.json
 for p in $(seq $PEERS); do
     echo "Configuring node $p"
-    printf '{' >> ssltest.json
     PEER_KEY=$(wg genkey)
-    printf '"public_key": "%s",' $(echo $PEER_KEY | wg pubkey) >> ssltest.json
+    printf '"%s": {' $(echo $PEER_KEY | wg pubkey) >> ssltest.json
     #printf '"preshared_secret": "%s",' $(wg genpsk) >> ssltest.json
     printf '"endpoint": "170.24.12.42:24231",' >> ssltest.json
     printf '"allowed_ips": ["10.0.0.%s/32"]' $(($p + 1)) >> ssltest.json
@@ -84,7 +83,7 @@ for p in $(seq $PEERS); do
     printf "PersistentKeepalive = 25\n" >> $WGCONF
     chmod 0500 $WGCONF
 done
-printf '],' >> ssltest.json
+printf '},' >> ssltest.json
 printf '"proxy": {' >> ssltest.json
 printf '"https://a.fractal.com": ["10.0.0.2:443"],' $n >> ssltest.json
 printf '"https://b.fractal.com": ["10.0.0.3:443"],' $n >> ssltest.json
