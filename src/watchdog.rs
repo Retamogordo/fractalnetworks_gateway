@@ -27,12 +27,12 @@ pub async fn watchdog(pool: &SqlitePool, duration: Duration) -> Result<()> {
 
 pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
     info!("Running watchdog");
-    let netns_items = netns_list().await?;
+    let netns_items = netns_list().await.context("Listing network namespaces")?;
     for netns in &netns_items {
         if netns.name.starts_with(NETNS_PREFIX) {
             match watchdog_netns(pool, &netns.name).await {
                 Ok(_) => {}
-                Err(e) => error!("{:?}", e),
+                Err(e) => error!("Error in watchdog_netns: {:?}", e),
             }
         }
     }
@@ -41,9 +41,14 @@ pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
 
 pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
     let wgif = format!("wg{}", &netns[8..]);
-    let stats = wireguard_stats(&netns, &wgif).await?;
+    let stats = wireguard_stats(&netns, &wgif)
+        .await
+        .context("Fetching wireguard stats")?;
     for peer in stats.peers() {
-        watchdog_peer(pool, &stats, &peer).await?;
+        match watchdog_peer(pool, &stats, &peer).await {
+            Ok(_) => {}
+            Err(e) => error!("Error in watchdog_peer: {:?}", e),
+        }
     }
     Ok(())
 }

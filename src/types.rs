@@ -1,6 +1,6 @@
 use crate::gateway::BRIDGE_NET;
 use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use ipnet::IpNet;
 use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
@@ -234,7 +234,7 @@ impl NetworkStats {
 pub struct PeerStats {
     pub public_key: WireguardPubkey,
     preshared_key: Option<WireguardSecret>,
-    endpoint: SocketAddr,
+    endpoint: Option<SocketAddr>,
     allowed_ips: Vec<IpNet>,
     latest_handshake: usize,
     pub transfer_rx: usize,
@@ -256,14 +256,19 @@ impl FromStr for PeerStats {
             } else {
                 Some(WireguardSecret::from_str(components[1])?)
             },
-            endpoint: components[2].parse()?,
+            endpoint: if components[2] == "(none)" {
+                None
+            } else {
+                Some(components[2].parse().context("Parsing endpoint")?)
+            },
             allowed_ips: if components[3] == "(none)" {
                 vec![]
             } else {
                 components[3]
                     .split(',')
                     .map(|ipnet| ipnet.parse())
-                    .collect::<Result<Vec<_>, _>>()?
+                    .collect::<Result<Vec<_>, _>>()
+                    .context("Parsing IpNet")?
             },
             latest_handshake: components[4].parse()?,
             transfer_rx: components[5].parse()?,
