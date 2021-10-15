@@ -136,6 +136,15 @@ The resulting static binary will be available in `target/release/gateway` after
 a successful build, which can be deployed to any machine. The binary is
 self-contained and needs no additional runtime data.
 
+## Dependencies
+
+Install these with APT or similar.
+
+- wireguard-tools
+- iptables
+- iproute2
+- nginx
+
 ## Running
 
 To run it, simply launch the executable with root privileges on a suitable
