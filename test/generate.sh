@@ -47,10 +47,9 @@ for n in $(seq $AMOUNT); do
     printf '"%s": {' "$PORT"
     printf '"private_key": "%s", ' $(wg genkey)
     printf '"address": ["10.0.0.1/16"],'
-    printf '"peers": ['
+    printf '"peers": {'
     for p in $(seq $PEERS); do
-        printf '{'
-        printf '"public_key": "%s",' $(wg genkey | wg pubkey)
+        printf '"%s": {' $(wg genkey | wg pubkey)
         printf '"preshared_secret": "%s",' $(wg genpsk)
         printf '"endpoint": "170.24.12.42:24231",'
         printf '"allowed_ips": ["10.0.0.%s/32"]' $(($p + 1))
@@ -60,7 +59,7 @@ for n in $(seq $AMOUNT); do
             printf '},'
         fi
     done
-    printf '],'
+    printf '},'
     printf '"proxy": {'
     printf '"ssh://git.domain%s.com": ["10.0.0.1:8000", "10.0.0.2:7000"],' $n
     printf '"https://gitlab.domain%s.com": ["10.0.0.2:443", "10.0.0.5:443"],' $n
