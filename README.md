@@ -145,6 +145,13 @@ Install these with APT or similar.
 - iproute2
 - nginx
 
+Additionally, you need to make sure that packet forwarding is enabled in the
+kernel. By default, it is disabled. You can enable it with this command:
+
+    sysctl -w net.ipv4.ip_forward=1
+
+This setting will not persist after a reboot, however.
+
 ## Running
 
 To run it, simply launch the executable with root privileges on a suitable

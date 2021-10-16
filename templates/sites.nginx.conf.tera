@@ -1,0 +1,21 @@
+{% for upstream, servers in http_upstream -%}
+upstream {{ upstream }} {
+  {%- for server in servers %}
+  server {{ server }};
+  {%- endfor %}
+}
+
+{% endfor %}
+{%- for domain, upstream  in http_forwarding %}
+server {
+  server_name {{ domain }};
+  listen 80;
+  listen [::]:80;
+
+  location / {
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_pass http://{{ upstream }};
+  }
+}
+{% endfor %}

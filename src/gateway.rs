@@ -12,7 +12,8 @@ use std::path::Path;
 use tera::Tera;
 
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
-const NGINX_CONF_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";
+const NGINX_MODULE_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";
+const NGINX_SITE_PATH: &'static str = "/etc/nginx/sites-enabled/gateway.conf";
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
     pub static ref TERA_TEMPLATES: Tera = {
@@ -23,6 +24,7 @@ lazy_static! {
                 include_str!("../templates/iptables.save.tera"),
             ),
             ("nginx.conf", include_str!("../templates/nginx.conf.tera")),
+            ("sites.nginx.conf", include_str!("../templates/sites.nginx.conf.tera"))
         ])
         .unwrap();
         tera
@@ -215,7 +217,11 @@ pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
     }
     let context = tera::Context::from_serialize(&forwarding)?;
     let config = TERA_TEMPLATES.render("nginx.conf", &context)?;
-    tokio::fs::write(Path::new(NGINX_CONF_PATH), config.as_bytes()).await?;
+    tokio::fs::write(Path::new(NGINX_MODULE_PATH), config.as_bytes()).await?;
+
+    let config = TERA_TEMPLATES.render("sites.nginx.conf", &context)?;
+    tokio::fs::write(Path::new(NGINX_SITE_PATH), config.as_bytes()).await?;
+
     nginx_reload().await?;
     Ok(())
 }

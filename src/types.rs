@@ -140,7 +140,8 @@ impl PeerState {
 pub struct Forwarding {
     https_forwarding: BTreeMap<String, String>,
     https_upstream: BTreeMap<String, Vec<SocketAddr>>,
-    http_forwarding: BTreeMap<String, SocketAddr>,
+    http_forwarding: BTreeMap<String, String>,
+    http_upstream: BTreeMap<String, Vec<SocketAddr>>,
     ssh_forwarding: BTreeMap<String, SocketAddr>,
 }
 
@@ -184,7 +185,26 @@ impl Forwarding {
         servers.push(socket);
     }
 
-    pub fn add_http(&mut self, _url: &Url, _socket: SocketAddr) {}
+    pub fn add_http(&mut self, url: &Url, socket: SocketAddr) {
+        let host = url.host_str().unwrap();
+        let upstream = self
+            .http_forwarding
+            .entry(host.to_string())
+            .or_insert_with(|| {
+                format!(
+                    "http_{}",
+                    base32::encode(
+                        base32::Alphabet::RFC4648 { padding: false },
+                        host.as_bytes()
+                    )
+                )
+            });
+        let servers = self
+            .http_upstream
+            .entry(upstream.to_string())
+            .or_insert_with(|| vec![]);
+        servers.push(socket);
+    }
 
     pub fn add_ssh(&mut self, _url: &Url, _socket: SocketAddr) {}
 }
