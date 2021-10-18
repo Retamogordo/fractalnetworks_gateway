@@ -32,11 +32,11 @@ pub mod wireguard;
 
 use anyhow::Result;
 use sqlx::SqlitePool;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
 use tokio::fs::File;
-use std::path::{Path, PathBuf};
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
@@ -74,8 +74,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let database_string = options.database
-        .unwrap_or_else(|| ":memory:".to_string());
+    let database_string = options.database.unwrap_or_else(|| ":memory:".to_string());
 
     // connect and migrate database
     let pool = SqlitePool::connect(&database_string).await?;

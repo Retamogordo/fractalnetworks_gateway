@@ -24,7 +24,10 @@ lazy_static! {
                 include_str!("../templates/iptables.save.tera"),
             ),
             ("nginx.conf", include_str!("../templates/nginx.conf.tera")),
-            ("sites.nginx.conf", include_str!("../templates/sites.nginx.conf.tera"))
+            (
+                "sites.nginx.conf",
+                include_str!("../templates/sites.nginx.conf.tera"),
+            ),
         ])
         .unwrap();
         tera
