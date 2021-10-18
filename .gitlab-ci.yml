@@ -41,7 +41,7 @@ test:
     - cargo test
 
 # generate release build
-build:
+build:amd64:
   stage: build
   script:
     - cargo build --release
@@ -50,10 +50,25 @@ build:
       - target/release/gateway
     expire_in: 1 week
 
+# build for arm target
+build:arm:
+  stage: build
+  before_script:
+    - apt update
+    - apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+    - rustup target add arm-unknown-linux-gnueabihf
+  script:
+    - export CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER=/usr/bin/arm-linux-gnueabihf-gcc
+    - cargo build --release --target arm-unknown-linux-gnueabihf
+  artifacts:
+    paths:
+      - target/arm-unknown-linux-gnueabihf/release/gateway
+    expire_in: 1 week
+
 # generate swagger API docs.
 openapi:
   allow_failure: true
-  stage: deploy
+  stage: build
   image: openapitools/openapi-generator-cli
   script:
     - java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -i api/gateway_0.1.0.yaml -g html2 -o target/openapi
@@ -62,18 +77,30 @@ openapi:
       - target/openapi
     expire_in: 1 week
 
+# generate rust html documentation
+rustdoc:
+  stage: build
+  script:
+    - cargo doc
+  artifacts:
+    paths:
+      - target/doc
+    expire_in: 1 week
+
 # publish binary, docs and API docs to gitlab pages.
 pages:
   stage: deploy
   dependencies:
-    - build
+    - build:amd64
+    - build:arm
     - openapi
+    - rustdoc
   script:
-    - cargo doc
     - mkdir public
     - mv target/doc public/doc
     - mv target/openapi public/api
     - mv target/release/gateway public/gateway-master-amd64
+    - mv target/arm-unknown-linux-gnueabihf/gateway public/gateway-master-arm
   artifacts:
     paths:
       - public
