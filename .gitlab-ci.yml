@@ -52,19 +52,15 @@ build:
 
 # generate swagger API docs.
 api:
+  allow_failure: true
   stage: deploy
-  image: node:10-alpine
-  before_script:
-    - npm install swagger-ui-dist@3.22.1
-    - npm install yaml-to-json -g
+  image: openapitools/openapi-generator-cli
   script:
-    - mkdir swagger
-    - cp -rp node_modules/swagger-ui-dist/* swagger
-    - yaml2json api --output swagger
-    - sed -i "s#https://petstore\.swagger\.io/v2/swagger\.json#gateway_0.1.0.json#g" public/index.html
+    - java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -i api/gateway_0.1.0.yaml -g html2 -o target/openapi
   artifacts:
     paths:
-      - swagger
+      - target/openapi
+    expire_in: 1 week
 
 # publish binary, docs and API docs to gitlab pages.
 pages:
