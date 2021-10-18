@@ -1,33 +1,60 @@
-swagger: "2.0"
+openapi: 3.0.3
 info:
-  description: "Rust-based Gateway for WireGuard"
-  version: "0.1.0"
-  title: "Gateway"
-  contact:
-    email: "patrick@ether.ai"
-host: "gateway.ether.ai"
-basePath: "/api/v1"
-tags:
-  - name: "tag1"
-    description: "a tag"
-schemes:
-  - "https"
+  title: Gateway
+  version: 0.1.0
+  x-logo:
+    url: ''
+  description: Rust daemon managing multiple WireGuard interfaces on a single host.
 paths:
-  /myendpoint:
+  /api/v1/traffic.json:
+    summary: Fetches traffic data from networks.
+    description: >-
+      Fetches traffic data, optionally since the timestamp. If no timestamp is
+      supplied, all collected traffic data is returned. This might potentially
+      be a large amount of data. For that reason, it is recommended that traffic
+      data be periodically polled and only the latest data be retrieved.
     get:
-      tags:
-        - "tag1"
-      summary: "summary placeholder"
-      description: ""
-      operationId: "myEndpoint"
-      produces:
-        - "text/plain"
-      responses:
-        200:
-          description: "successful request"
-          schema:
-            $ref: "#/definitions/MyResponse"
-definitions:
-  MyResponse:
-    type: "string"
-
+      tags: []
+    x-last-modified: 1634580972874
+    parameters:
+      - name: start
+        in: query
+        description: >-
+          Timestamp to filter traffic data that occured after this timestamp
+          only.
+        required: false
+        deprecated: false
+        allowEmptyValue: false
+        x-last-modified: 1634580927630
+components:
+  securitySchemes:
+    Token:
+      type: http
+      scheme: basic
+      description: |-
+        Example: 
+        > Token: abc
+      x-last-modified: 1634580614708
+      bearerFormat: Preshared token used for authentication.
+  schemas:
+    TrafficInfo:
+      type: object
+      description: Represents traffic data that is collected.
+      properties:
+        start: 0
+        end: 123412
+        traffic:
+          rx: 0
+          tx: 0
+      x-last-modified: 1634580770568
+  headers: {}
+  responses: {}
+  parameters: {}
+tags: []
+servers:
+  - url: https://gateway.ether.ai
+    description: ''
+    variables: {}
+    x-last-modified: 1634580634142
+security:
+  - BasicAuth: []
