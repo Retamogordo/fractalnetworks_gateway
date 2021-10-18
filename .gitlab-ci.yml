@@ -100,7 +100,7 @@ pages:
     - mv target/doc public/doc
     - mv target/openapi public/api
     - mv target/release/gateway public/gateway-master-amd64
-    - mv target/arm-unknown-linux-gnueabihf/gateway public/gateway-master-arm
+    - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm
   artifacts:
     paths:
       - public
