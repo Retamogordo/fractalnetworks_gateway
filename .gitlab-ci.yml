@@ -55,7 +55,7 @@ api:
   stage: deploy
   image: node:10-alpine
   before_script:
-    - npm install swager-ui-dist@3.22.1
+    - npm install swagger-ui-dist@3.22.1
     - npm install yaml-to-json -g
   script:
     - mkdir swagger
