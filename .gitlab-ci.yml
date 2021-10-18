@@ -51,7 +51,7 @@ build:
     expire_in: 1 week
 
 # generate swagger API docs.
-api:
+openapi:
   allow_failure: true
   stage: deploy
   image: openapitools/openapi-generator-cli
@@ -67,10 +67,12 @@ pages:
   stage: deploy
   dependencies:
     - build
-    - api
+    - openapi
   script:
     - cargo doc
-    - mv target/doc public
+    - mkdir public
+    - mv target/doc public/doc
+    - mv target/openapi public/api
     - mv target/release/gateway public/gateway-master-amd64
   artifacts:
     paths:
