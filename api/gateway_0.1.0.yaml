@@ -1,0 +1,33 @@
+swagger: "2.0"
+info:
+  description: "Rust-based Gateway for WireGuard"
+  version: "0.1.0"
+  title: "Gateway"
+  contact:
+    email: "patrick@ether.ai"
+host: "gateway.ether.ai"
+basePath: "/api/v1"
+tags:
+  - name: "tag1"
+    description: "a tag"
+schemes:
+  - "https"
+paths:
+  /myendpoint:
+    get:
+      tags:
+        - "tag1"
+      summary: "summary placeholder"
+      description: ""
+      operationId: "myEndpoint"
+      produces:
+        - "text/plain"
+      responses:
+        200:
+          description: "successful request"
+          schema:
+            $ref: "#/definitions/MyResponse"
+definitions:
+  MyResponse:
+    type: "string"
+

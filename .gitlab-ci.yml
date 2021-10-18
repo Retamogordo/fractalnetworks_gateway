@@ -20,23 +20,27 @@ stages:
   - build
   - deploy
 
+# make sure that formatting is correct.
 rustfmt:
   stage: test
   allow_failure: true
   script:
     - cargo fmt -- --check
 
+# make sure there are no issues with the code.
 clippy:
   stage: test
   allow_failure: true
   script:
     - cargo clippy
 
+# run unit tests.
 test:
   stage: test
   script:
     - cargo test
 
+# generate release build
 build:
   stage: build
   script:
@@ -46,10 +50,28 @@ build:
       - target/release/gateway
     expire_in: 1 week
 
+# generate swagger API docs.
+api:
+  stage: deploy
+  image: node:10-alpine
+  before_script:
+    - npm install swager-ui-dist@3.22.1
+    - npm install yaml-to-json -g
+  script:
+    - mkdir swagger
+    - cp -rp node_modules/swagger-ui-dist/* swagger
+    - yaml2json api --output swagger
+    - sed -i "s#https://petstore\.swagger\.io/v2/swagger\.json#gateway_0.1.0.json#g" public/index.html
+  artifacts:
+    paths:
+      - swagger
+
+# publish binary, docs and API docs to gitlab pages.
 pages:
   stage: deploy
   dependencies:
     - build
+    - api
   script:
     - cargo doc
     - mv target/doc public
