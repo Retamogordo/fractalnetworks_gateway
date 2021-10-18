@@ -32,7 +32,7 @@ pub mod wireguard;
 
 use anyhow::Result;
 use sqlx::SqlitePool;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
