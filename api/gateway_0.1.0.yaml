@@ -2,11 +2,9 @@ openapi: 3.0.3
 info:
   title: Gateway
   version: 0.1.0
-  x-logo:
-    url: ''
   description: Rust daemon managing multiple WireGuard interfaces on a single host.
 paths:
-  /api/v1/traffic.json:
+  /traffic.json:
     summary: Fetches traffic data from networks.
     description: >-
       Fetches traffic data, optionally since the timestamp. If no timestamp is
@@ -14,47 +12,111 @@ paths:
       be a large amount of data. For that reason, it is recommended that traffic
       data be periodically polled and only the latest data be retrieved.
     get:
-      tags: []
-    x-last-modified: 1634580972874
-    parameters:
-      - name: start
-        in: query
-        description: >-
-          Timestamp to filter traffic data that occured after this timestamp
-          only.
-        required: false
-        deprecated: false
-        allowEmptyValue: false
-        x-last-modified: 1634580927630
+      tags:
+        - traffic
+      parameters:
+        - name: start
+          in: query
+          description: >-
+            Timestamp to filter traffic data that occured after this timestamp
+            only.
+      responses:
+        '200':
+          description: Traffic data since the provided timestamp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Traffic'
+  /config.json:
+    post:
+      tags:
+        - config
+      summary: Push new configuration that the gateway daemon will apply.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        '200':
+          description: Configuration was applied successfully.
+  /status.json:
+    get:
+      tags:
+        - status
+      summary: Fetch the current runtime data, such as numbers of connected devices and error counts.
+      responses:
+        '200':
+          description: Runtime state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
 components:
-  securitySchemes:
-    Token:
-      type: http
-      scheme: basic
-      description: |-
-        Example: 
-        > Token: abc
-      x-last-modified: 1634580614708
-      bearerFormat: Preshared token used for authentication.
   schemas:
-    TrafficInfo:
+    Traffic:
       type: object
       description: Represents traffic data that is collected.
       properties:
-        start: 0
-        end: 123412
+        start:
+          type: number
+        end:
+          type: number
         traffic:
-          rx: 0
-          tx: 0
-      x-last-modified: 1634580770568
-  headers: {}
-  responses: {}
-  parameters: {}
-tags: []
+          type: object
+          properties:
+            rx:
+              type: number
+            tx:
+              type: number
+    Config:
+      type: object
+      description: Configuration for the gateway.
+      properties:
+        listen_port:
+          type: object
+          properties:
+            private_key:
+              type: string
+            address:
+              type: array
+              items:
+                type: string
+            proxy:
+              type: object
+              properties:
+                domain_name:
+                  type: array
+                  items:
+                    type: string
+    Status:
+      type: object
+      description: Configuration for the gateway.
+      properties:
+        listen_port:
+          type: object
+          properties:
+            private_key:
+              type: string
+            address:
+              type: array
+              items:
+                type: string
+            proxy:
+              type: object
+              properties:
+                domain_name:
+                  type: array
+                  items:
+                    type: string
+tags:
+  - name: traffic
+    description: Anything related to traffic data
+  - name: config
+    description: Anything related to config
+  - name: status
+    description: Anything related to runtime state (number of connections)
 servers:
-  - url: https://gateway.ether.ai
-    description: ''
-    variables: {}
-    x-last-modified: 1634580634142
-security:
-  - BasicAuth: []
+  - url: /api/v1
+    description: 'Example production server.'

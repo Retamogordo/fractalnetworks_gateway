@@ -72,6 +72,7 @@ openapi:
   image: openapitools/openapi-generator-cli
   script:
     - java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -i api/gateway_0.1.0.yaml -g html2 -o target/openapi
+    - java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -i api/gateway_0.1.0.yaml -g openapi -o target/openapi
   artifacts:
     paths:
       - target/openapi
