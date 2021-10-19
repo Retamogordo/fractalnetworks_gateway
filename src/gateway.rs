@@ -58,18 +58,19 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     // ones that exist but shouldn't, we delete them.
     for netns in netns_list.difference(&netns_expected) {
         if netns.starts_with(NETNS_PREFIX) {
-            netns_del(&netns).await
+            netns_del(&netns)
+                .await
                 .context("Removing surplus network namespace")?;
         }
     }
 
     // for the rest, apply config
     for network in state {
-        apply_network(network).await
-            .context("Applying network")?;
+        apply_network(network).await.context("Applying network")?;
     }
 
-    apply_nginx(state).await
+    apply_nginx(state)
+        .await
         .context("Applying nginx configuration")?;
 
     Ok("success".to_string())
