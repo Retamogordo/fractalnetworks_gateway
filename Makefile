@@ -24,3 +24,7 @@ test:
 run: release
 	@touch $(GATEWAY_DATABASE)
 	RUST_LOG=info,sqlx=warn RUST_BACKTRACE=1 ROCKET_ADDRESS=$(GATEWAY_ADDRESS) ROCKET_PORT=$(GATEWAY_PORT) $(CARGO) run --release -- --database $(GATEWAY_DATABASE) --secret $(GATEWAY_TOKEN)
+
+deps:
+	apt update
+	apt install -y wireguard-tools iptables nginx iproute2
