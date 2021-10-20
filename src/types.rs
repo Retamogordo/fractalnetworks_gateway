@@ -126,9 +126,15 @@ impl PeerState {
         writeln!(
             config,
             "AllowedIPs = {}",
-            self.allowed_ips.iter().map(|ip| ip.to_string()).join(", ")
+            self.allowed_ips
+                .iter()
+                .map(|ip| ip.trunc().to_string())
+                .join(", ")
         )
         .unwrap();
+        if let Some(preshared_key) = &self.preshared_key {
+            writeln!(config, "PresharedKey = {}", preshared_key.to_string()).unwrap();
+        }
         if let Some(endpoint) = self.endpoint {
             writeln!(config, "Endpoint = {}", endpoint).unwrap();
         }

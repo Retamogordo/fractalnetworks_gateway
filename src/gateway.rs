@@ -151,7 +151,7 @@ pub async fn apply_addr(netns: Option<&str>, interface: &str, target: &[IpNet]) 
     let current = addr_list(netns, interface).await?;
     for addr in target {
         if !current.contains(addr) {
-            addr_add(netns, interface, &addr.to_string()).await?;
+            addr_add(netns, interface, *addr).await?;
         }
     }
     Ok(())

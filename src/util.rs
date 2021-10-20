@@ -85,7 +85,7 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     Ok(items)
 }
 
-pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Result<()> {
+pub async fn addr_add(netns: Option<&str>, interface: &str, addr: IpNet) -> Result<()> {
     info!("addr add {:?}, {}, {}", netns, interface, addr);
     let mut command = Command::new(IP_PATH);
     if let Some(netns) = netns {
@@ -94,7 +94,7 @@ pub async fn addr_add(netns: Option<&str>, interface: &str, addr: &str) -> Resul
     let success = command
         .arg("addr")
         .arg("add")
-        .arg(addr)
+        .arg(addr.to_string())
         .arg("dev")
         .arg(interface)
         .status()
