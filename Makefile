@@ -28,3 +28,9 @@ run: release
 deps:
 	apt update
 	apt install -y wireguard-tools iptables nginx iproute2
+
+docker: release
+	$(DOCKER) build . -t gateway
+
+docker-run:
+	$(DOCKER) run -it --privileged --rm -p 8000:8000 -p 80:80 -p 443:443 -p 2000:2000/udp gateway
