@@ -34,7 +34,8 @@ docker: get-release-artifact
 	$(DOCKER) build . -t gateway
 
 docker-run:
-	$(DOCKER) run -it --privileged --rm -p 8000:8000 -p 80:80 -p 443:443 -p 2000:2000/udp gateway
+	-$(DOCKER) network create fractal
+	$(DOCKER) run --network fractal --name gateway -it --privileged --rm -p 8000:8000 -p 80:80 -p 443:443 -p 2000:2000/udp gateway
 
 get-release-artifact:
 	./scripts/get-release-artifact.sh $(ARCH)
