@@ -11,7 +11,6 @@ ENV RUST_BACKTRACE=1
 
 RUN apt update && apt install -y iptables iproute2 wireguard-tools nginx && apt clean
 COPY /target/release/gateway /usr/local/bin/gateway
-RUN echo "#!/bin/bash\nnginx &\ngateway --database \$GATEWAY_DATABASE --secret \$GATEWAY_TOKEN" > /bin/start.sh
-RUN chmod +x /bin/start.sh
+COPY scripts/entrypoint.sh /bin/entrypoint.sh
 
-ENTRYPOINT ["/bin/start.sh"]
+ENTRYPOINT ["/bin/entrypoint.sh"]
