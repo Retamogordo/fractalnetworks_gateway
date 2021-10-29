@@ -1,5 +1,7 @@
 CARGO=cargo
 DOCKER=docker
+IMAGE_NAME=registry.gitlab.com/fractalnetworks/gateway
+IMAGE_TAG=latest
 GATEWAY_DATABASE=/tmp/gateway.db
 GATEWAY_ADDRESS=127.0.0.1
 GATEWAY_PORT=8000
@@ -30,12 +32,15 @@ deps:
 	sudo apt update
 	sudo apt install -y wireguard-tools iptables nginx iproute2
 
-docker: get-release-artifact
-	$(DOCKER) build . -t gateway
+docker:
+	$(DOCKER) build . -t $(IMAGE_NAME):$(IMAGE_TAG)
+
+docker-push:
+	$(DOCKER) push $(IMAGE_NAME):$(IMAGE_TAG)
 
 docker-run:
 	-$(DOCKER) network create fractal
-	$(DOCKER) run --network fractal --name gateway -it --privileged --rm -p 8000:8000 -p 80:80 -p 443:443 -p 10000:60000/udp gateway
+	$(DOCKER) run --network fractal --name gateway -it --privileged --rm -p 8000:8000 -p 80:80 -p 443:443 gateway
 
 get-release-artifact:
 	./scripts/get-release-artifact.sh $(ARCH)
