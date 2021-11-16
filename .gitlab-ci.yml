@@ -1,5 +1,3 @@
-image: rustlang/rust:nightly
-
 # set up cache to speed up builds
 cache:
   key: $CI_COMMIT_REF_SLUG
@@ -8,12 +6,8 @@ cache:
     - .cache/sccache
 
 before_script:
-  - wget https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz -O /tmp/sccache.tar.gz
-  - tar -xf /tmp/sccache.tar.gz --strip-components=1 -C /usr/local/bin/
-  - chmod +x /usr/local/bin/sccache
   - export CARGO_HOME="${PWD}/.cargo"
   - export SCCACHE_DIR="${PWD}/.cache/sccache"
-  - export RUSTC_WRAPPER="/usr/local/bin/sccache"
 
 stages:
   - test
@@ -22,6 +16,7 @@ stages:
 
 # make sure that formatting is correct.
 rustfmt:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: test
   allow_failure: true
   script:
@@ -29,6 +24,7 @@ rustfmt:
 
 # make sure there are no issues with the code.
 clippy:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: test
   allow_failure: true
   script:
@@ -36,12 +32,14 @@ clippy:
 
 # run unit tests.
 test:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: test
   script:
     - cargo test
 
 # generate release build
 build:amd64:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: build
   script:
     - cargo build --release
@@ -51,14 +49,10 @@ build:amd64:
     expire_in: 1 week
 
 # build for arm target
-build:arm:
+build:arm32:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm32
   stage: build
-  before_script:
-    - apt update
-    - apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-    - rustup target add arm-unknown-linux-gnueabihf
   script:
-    - export CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER=/usr/bin/arm-linux-gnueabihf-gcc
     - cargo build --release --target arm-unknown-linux-gnueabihf
   artifacts:
     paths:
@@ -80,6 +74,7 @@ openapi:
 
 # generate rust html documentation
 rustdoc:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: build
   script:
     - cargo doc
@@ -94,7 +89,7 @@ pages:
   stage: deploy
   dependencies:
     - build:amd64
-    - build:arm
+    - build:arm32
     - openapi
     - rustdoc
   script:
@@ -115,7 +110,6 @@ pages:
 docker:
   dependencies:
     - build:amd64
-    - build:arm
   image: docker
   stage: deploy
   services:
