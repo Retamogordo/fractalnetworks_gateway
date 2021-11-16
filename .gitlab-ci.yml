@@ -90,6 +90,7 @@ rustdoc:
 
 # publish binary, docs and API docs to gitlab pages.
 pages:
+  image: registry.gitlab.com/fractalnetworks/images/pages
   stage: deploy
   dependencies:
     - build:amd64
@@ -101,7 +102,9 @@ pages:
     - mv target/doc public/doc
     - mv target/openapi public/api
     - mv target/release/gateway public/gateway-master-amd64
+    - sign public/gateway-master-amd64
     - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm
+    - sign public/gateway-master-arm
   artifacts:
     paths:
       - public
