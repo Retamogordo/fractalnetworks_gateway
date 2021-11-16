@@ -204,7 +204,7 @@ Some configuration options can be passed as environment variables:
 [gateway-master-arm64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm64.sig
 [gateway-master-arm32.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm32.sig
 
-[rustdoc]: https://fractalnetworks.gitlab.io/gateway/doc/gateway_manager
-[openapi]: https://fractalnetworks.gitlab.io/gateway/openapi
+[rustdoc]: https://fractalnetworks.gitlab.io/gateway/doc/gateway
+[openapi]: https://fractalnetworks.gitlab.io/gateway/api
 [registry]: https://gitlab.com/fractalnetworks/gateway/container_registry
 
