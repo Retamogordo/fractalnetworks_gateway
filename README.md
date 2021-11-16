@@ -5,6 +5,20 @@ fulfil three major purposes: facilitating connectivity between nodes,
 allowing ingress traffic from the internet to reach the nodes, and monitoring
 the state of the interfaces and traffic that occurs for accounting purposes.
 
+Builds:
+- [gateway-master-amd64][] ([signature][gateway-master-amd64.sig])
+- [gateway-master-arm64][] ([signature][gateway-master-arm64.sig])
+- [gateway-master-arm32][] ([signature][gateway-master-arm32.sig])
+
+Containers:
+- [`registry.gitlab.com/fractalnetworks/gateway`][registry]
+
+Resources:
+- [Source Documentation][rustdoc]
+- [API Documentation][openapi]
+
+## Background
+
 ![Gateway Architecture](gateway.png)
 
 To facilitate network connectivity between nodes, we create
@@ -181,3 +195,16 @@ Some configuration options can be passed as environment variables:
 [tokio]: https://tokio.rs/
 [rocket]: https://rocket.rs/
 [rustup]: https://rustup.rs/
+
+[gateway-master-amd64]: https://fractalnetworks.gitlab.io/gateway/gateway-master-amd64
+[gateway-master-arm64]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm64
+[gateway-master-arm32]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm32
+
+[gateway-master-amd64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-amd64.sig
+[gateway-master-arm64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm64.sig
+[gateway-master-arm32.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm32.sig
+
+[rustdoc]: https://fractalnetworks.gitlab.io/gateway/doc/gateway_manager
+[openapi]: https://fractalnetworks.gitlab.io/gateway/openapi
+[registry]: https://gitlab.com/fractalnetworks/gateway/container_registry
+
