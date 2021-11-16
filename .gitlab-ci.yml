@@ -59,6 +59,17 @@ build:arm32:
       - target/arm-unknown-linux-gnueabihf/release/gateway
     expire_in: 1 week
 
+# build for arm target
+build:arm64:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm64
+  stage: build
+  script:
+    - cargo build --release --target aarch64-unknown-linux-gnu
+  artifacts:
+    paths:
+      - target/aarch64-unknown-linux-gnu/release/gateway
+    expire_in: 1 week
+
 # generate swagger API docs.
 openapi:
   allow_failure: true
@@ -90,6 +101,7 @@ pages:
   dependencies:
     - build:amd64
     - build:arm32
+    - build:arm64
     - openapi
     - rustdoc
   script:
@@ -98,8 +110,10 @@ pages:
     - mv target/openapi public/api
     - mv target/release/gateway public/gateway-master-amd64
     - sign public/gateway-master-amd64
-    - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm
-    - sign public/gateway-master-arm
+    - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm32
+    - sign public/gateway-master-arm32
+    - mv target/aarch64-unknown-linux-gnu/release/gateway public/gateway-master-arm64
+    - sign public/gateway-master-arm64
   artifacts:
     paths:
       - public
