@@ -13,6 +13,7 @@ stages:
   - test
   - build
   - docker
+  - integration
   - deploy
 
 # make sure that formatting is correct.
@@ -133,3 +134,10 @@ docker:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - docker build . -t "$CI_REGISTRY_IMAGE:latest"
     - docker push "$CI_REGISTRY_IMAGE:latest"
+
+integration:
+  image: registry.gitlab.com/fractalnetworks/images/deploy
+  stage: integration
+  script:
+    - chmod 0600 "$CI_JOE_KEY"
+    - ssh -i "$CI_JOE_KEY" "$CI_JOE_IP" echo hi
