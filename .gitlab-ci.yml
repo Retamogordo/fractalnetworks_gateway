@@ -12,6 +12,7 @@ before_script:
 stages:
   - test
   - build
+  - docker
   - deploy
 
 # make sure that formatting is correct.
@@ -125,7 +126,7 @@ docker:
   dependencies:
     - build:amd64
   image: docker
-  stage: deploy
+  stage: docker
   services:
     - docker:dind
   script:
