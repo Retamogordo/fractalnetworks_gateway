@@ -139,7 +139,7 @@ integration:
   tags:
     - cijoe
   services:
-    - image: "registry.gitlab.com/fractalnetworks/gateway:$CI_COMMIT_REF_SLUG"
+    - name: "registry.gitlab.com/fractalnetworks/gateway:$CI_COMMIT_REF_SLUG"
       alias: gateway
   stage: integration
   script:
