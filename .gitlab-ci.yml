@@ -136,6 +136,7 @@ docker:build:
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
 
 integration:
+  dependencies: []
   tags:
     - cijoe
   services:
@@ -143,6 +144,7 @@ integration:
       alias: gateway
   stage: integration
   script:
+    - ./scripts/apply.sh --token abc --server gateway:8000 scripts/stats.json
     - ./scripts/test.sh
 
 docker:publish:
