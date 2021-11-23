@@ -140,7 +140,7 @@ integration:
   stage: integration
   script:
     - chmod 0600 "$CI_JOE_KEY"
-    - ssh -i "$CI_JOE_KEY" "$CI_JOE_IP" echo "$CI_COMMIT_REF_SLUG"
+    - ssh -i "$CI_JOE_KEY" "$CI_JOE_IP" test-gateway "$CI_JOB_ID" "$CI_COMMIT_REF_SLUG" "$CI_COMMIT_SHA"
 
 docker:publish:
   dependencies:
