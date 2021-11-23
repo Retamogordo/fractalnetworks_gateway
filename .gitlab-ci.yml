@@ -136,11 +136,14 @@ docker:build:
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
 
 integration:
-  image: registry.gitlab.com/fractalnetworks/images/deploy
+  tags:
+    - cijoe
+  services:
+    - image: "registry.gitlab.com/fractalnetworks/gateway:$CI_COMMIT_REF_SLUG"
+      alias: gateway
   stage: integration
   script:
-    - chmod 0600 "$CI_JOE_KEY"
-    - ssh -i "$CI_JOE_KEY" "$CI_JOE_IP" test-gateway "$CI_JOB_ID" "$CI_COMMIT_REF_SLUG" "$CI_COMMIT_SHA"
+    - ./scripts/test.sh
 
 docker:publish:
   dependencies:
