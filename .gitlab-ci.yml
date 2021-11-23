@@ -144,7 +144,7 @@ integration:
       alias: gateway
   stage: integration
   script:
-    - ./scripts/apply.sh --token abc --server gateway:8000 scripts/stats.json
+    - ./scripts/apply.sh --token abc --server gateway:8000 scripts/state.json
     - ./scripts/test.sh
 
 docker:publish:
