@@ -44,3 +44,6 @@ docker-run:
 
 get-release-artifact:
 	./scripts/get-release-artifact.sh $(ARCH)
+
+setup-git:
+	git config --global url."ssh://git@gitlab.com".insteadOf "https://gitlab.com"
