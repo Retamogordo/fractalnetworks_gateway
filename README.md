@@ -142,7 +142,9 @@ that it should use that toolchain for this repository by running
 
     rustup override set nightly
 
-Once that is working, build the code for deployment by running
+Once that is working, you want to run `make setup-git` because it will use your SSH keys instead of asking for git credentials (and possibly requiring 2-factor authentication).
+
+ Finally, build the code for deployment by running
 
     cargo build --release
 
