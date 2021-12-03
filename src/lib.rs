@@ -1,12 +1,12 @@
-use wireguard_util::keys::{Pubkey, Privkey, Secret};
-use serde_with::{serde_as, DisplayFromStr};
-use serde::{Serialize, Deserialize};
-use ipnet::IpNet;
-use std::net::SocketAddr;
-use std::collections::{HashMap, BTreeMap};
-use url::Url;
 use async_trait::async_trait;
+use ipnet::IpNet;
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
+use std::collections::{BTreeMap, HashMap};
+use std::net::SocketAddr;
 use thiserror::Error;
+use url::Url;
+use wireguard_util::keys::{Privkey, Pubkey, Secret};
 
 #[derive(Error, Debug)]
 pub enum GatewayError {
@@ -47,50 +47,30 @@ pub struct PeerState {
 
 #[async_trait]
 pub trait Gateway {
-    async fn config_set(
-        &self,
-        token: &str,
-        state: &GatewayConfig) -> Result<(), GatewayError>;
+    async fn config_set(&self, token: &str, state: &GatewayConfig) -> Result<(), GatewayError>;
 
-    async fn config_get(
-        &self,
-        token: &str) -> Result<GatewayConfig, GatewayError>;
+    async fn config_get(&self, token: &str) -> Result<GatewayConfig, GatewayError>;
 
-    async fn status_get(
-        &self,
-        token: &str) -> Result<(), GatewayError>;
+    async fn status_get(&self, token: &str) -> Result<(), GatewayError>;
 
-    async fn traffic_get(
-        &self,
-        token: &str,
-        since: Option<usize>) -> Result<(), GatewayError>;
+    async fn traffic_get(&self, token: &str, since: Option<usize>) -> Result<(), GatewayError>;
 }
 
 #[async_trait]
 impl Gateway for Url {
-    async fn config_set(
-        &self,
-        token: &str,
-        state: &GatewayConfig) -> Result<(), GatewayError> {
+    async fn config_set(&self, token: &str, state: &GatewayConfig) -> Result<(), GatewayError> {
         unimplemented!()
     }
 
-    async fn config_get(
-        &self,
-        token: &str) -> Result<GatewayConfig, GatewayError> {
+    async fn config_get(&self, token: &str) -> Result<GatewayConfig, GatewayError> {
         unimplemented!()
     }
 
-    async fn status_get(
-        &self,
-        token: &str) -> Result<(), GatewayError> {
+    async fn status_get(&self, token: &str) -> Result<(), GatewayError> {
         unimplemented!()
     }
 
-    async fn traffic_get(
-        &self,
-        token: &str,
-        since: Option<usize>) -> Result<(), GatewayError> {
+    async fn traffic_get(&self, token: &str, since: Option<usize>) -> Result<(), GatewayError> {
         unimplemented!()
     }
 }
