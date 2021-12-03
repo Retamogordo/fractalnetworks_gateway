@@ -203,7 +203,12 @@ impl Gateway for Url {
         let url = self
             .join(&"/api/v1/config.json")
             .map_err(|_| GatewayError::Unknown)?;
-        let result = client.post(url).json(state).send().await?;
+        let result = client
+            .post(url)
+            .header("Token", token)
+            .json(state)
+            .send()
+            .await?;
         match result.status() {
             status if status.is_success() => Ok(()),
             _ => Err(GatewayError::Unknown),
@@ -231,7 +236,7 @@ impl Gateway for Url {
         let url = self
             .join(&"/api/v1/traffic.json")
             .map_err(|_| GatewayError::Unknown)?;
-        let result = client.get(url).send().await?;
+        let result = client.get(url).header("Token", token).send().await?;
         match result.status() {
             status if status.is_success() => Ok(result.json().await?),
             _ => Err(GatewayError::Unknown),
