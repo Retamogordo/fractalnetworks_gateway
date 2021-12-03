@@ -7,7 +7,7 @@ use itertools::Itertools;
 use log::*;
 use rocket::serde::{Deserialize, Serialize};
 
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use url::Url;
