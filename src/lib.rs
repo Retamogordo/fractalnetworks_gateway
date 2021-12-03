@@ -1,5 +1,7 @@
 use async_trait::async_trait;
 use ipnet::IpNet;
+#[cfg(feature = "client")]
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap};
@@ -160,32 +162,79 @@ impl DeviceTraffic {
     }
 }
 
+/// Client for the gateway. These methods can be called to interface with a
+/// gateway server.
+#[cfg(feature = "client")]
 #[async_trait]
 pub trait Gateway {
-    async fn config_set(&self, token: &str, state: &GatewayConfig) -> Result<(), GatewayError>;
+    /// Apply a new configuration to a gateway.
+    async fn config_set(
+        &self,
+        client: &Client,
+        token: &str,
+        state: &GatewayConfig,
+    ) -> Result<(), GatewayError>;
 
-    async fn config_get(&self, token: &str) -> Result<GatewayConfig, GatewayError>;
+    /// Get the currently active configuration from the gateway.
+    async fn config_get(&self, client: &Client, token: &str)
+        -> Result<GatewayConfig, GatewayError>;
 
-    async fn status_get(&self, token: &str) -> Result<(), GatewayError>;
+    /// Get the current status of the networks.
+    async fn status_get(&self, client: &Client, token: &str) -> Result<(), GatewayError>;
 
-    async fn traffic_get(&self, token: &str, since: Option<usize>) -> Result<(), GatewayError>;
+    /// Get the traffic since the provided timestamp.
+    async fn traffic_get(
+        &self,
+        client: &Client,
+        token: &str,
+        since: Option<usize>,
+    ) -> Result<TrafficInfo, GatewayError>;
 }
 
+#[cfg(feature = "client")]
 #[async_trait]
 impl Gateway for Url {
-    async fn config_set(&self, token: &str, state: &GatewayConfig) -> Result<(), GatewayError> {
+    async fn config_set(
+        &self,
+        client: &Client,
+        token: &str,
+        state: &GatewayConfig,
+    ) -> Result<(), GatewayError> {
+        let url = self
+            .join(&"/api/v1/config.json")
+            .map_err(|_| GatewayError::Unknown)?;
+        let result = client.post(url).json(state).send().await?;
+        match result.status() {
+            status if status.is_success() => Ok(()),
+            _ => Err(GatewayError::Unknown),
+        }
+    }
+
+    async fn config_get(
+        &self,
+        client: &Client,
+        token: &str,
+    ) -> Result<GatewayConfig, GatewayError> {
         unimplemented!()
     }
 
-    async fn config_get(&self, token: &str) -> Result<GatewayConfig, GatewayError> {
+    async fn status_get(&self, client: &Client, token: &str) -> Result<(), GatewayError> {
         unimplemented!()
     }
 
-    async fn status_get(&self, token: &str) -> Result<(), GatewayError> {
-        unimplemented!()
-    }
-
-    async fn traffic_get(&self, token: &str, since: Option<usize>) -> Result<(), GatewayError> {
-        unimplemented!()
+    async fn traffic_get(
+        &self,
+        client: &Client,
+        token: &str,
+        since: Option<usize>,
+    ) -> Result<TrafficInfo, GatewayError> {
+        let url = self
+            .join(&"/api/v1/traffic.json")
+            .map_err(|_| GatewayError::Unknown)?;
+        let result = client.get(url).send().await?;
+        match result.status() {
+            status if status.is_success() => Ok(result.json().await?),
+            _ => Err(GatewayError::Unknown),
+        }
     }
 }
