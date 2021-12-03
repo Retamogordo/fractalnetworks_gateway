@@ -66,6 +66,12 @@ pub struct Traffic {
     pub tx: usize,
 }
 
+impl Traffic {
+    pub fn new(rx: usize, tx: usize) -> Self {
+        Traffic { rx, tx }
+    }
+}
+
 impl Add for Traffic {
     type Output = Self;
 
