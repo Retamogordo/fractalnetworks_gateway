@@ -1,0 +1,109 @@
+# set up cache to speed up builds
+cache:
+  key: $CI_COMMIT_REF_SLUG
+  paths:
+    - .cargo/
+    - .cache/sccache
+
+before_script:
+  - export CARGO_HOME="${PWD}/.cargo"
+  - export SCCACHE_DIR="${PWD}/.cache/sccache"
+  - command -v git > /dev/null && git config --global credential.helper store || true
+  - echo "https://gitlab-deploy-token:$CI_DEPLOY_TOKEN@gitlab.com" >> ~/.git-credentials
+
+stages:
+  - test
+  - build
+  - deploy
+
+# make sure that formatting is correct.
+rustfmt:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  stage: test
+  allow_failure: true
+  script:
+    - cargo fmt -- --check
+
+# make sure there are no issues with the code.
+clippy:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  stage: test
+  allow_failure: true
+  script:
+    - cargo clippy
+
+# run unit tests.
+test:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  stage: test
+  script:
+    - cargo test
+
+# generate release build
+build:amd64:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  stage: build
+  script:
+    - cargo build --bin client --release --features gateway-client
+  artifacts:
+    paths:
+      - target/release/client
+    expire_in: 1 week
+
+# build for arm target
+build:arm32:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm32
+  stage: build
+  script:
+    - cargo build --release --target arm-unknown-linux-gnueabihf --bin client --features gateway-client
+  artifacts:
+    paths:
+      - target/arm-unknown-linux-gnueabihf/release/client
+    expire_in: 1 week
+
+# build for arm target
+build:arm64:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm64
+  stage: build
+  script:
+    - cargo build --release --target aarch64-unknown-linux-gnu --bin client --features gateway-client
+  artifacts:
+    paths:
+      - target/aarch64-unknown-linux-gnu/release/client
+    expire_in: 1 week
+
+# generate rust html documentation
+rustdoc:
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  stage: build
+  script:
+    - cargo doc --all-features --no-deps
+  artifacts:
+    paths:
+      - target/doc
+    expire_in: 1 week
+
+# publish binary, docs and API docs to gitlab pages.
+pages:
+  image: registry.gitlab.com/fractalnetworks/images/pages
+  stage: deploy
+  dependencies:
+    - build:amd64
+    - build:arm64
+    - build:arm32
+    - rustdoc
+  script:
+    - mkdir public
+    - mv target/doc public/doc
+    - mv target/release/client public/gateway-client-amd64
+    - sign public/gateway-client-amd64
+    - mv target/arm-unknown-linux-gnueabihf/release/client public/gateway-client-arm32
+    - sign public/gateway-client-arm32
+    - mv target/aarch64-unknown-linux-gnu/release/client public/gateway-client-arm64
+    - sign public/gateway-client-arm64
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+  only:
+    - master
