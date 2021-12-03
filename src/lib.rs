@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap};
 use std::net::SocketAddr;
+use std::ops::{Deref, DerefMut};
 use thiserror::Error;
 use url::Url;
 use wireguard_util::keys::{Privkey, Pubkey, Secret};
@@ -19,6 +20,20 @@ pub enum GatewayError {
 
 #[derive(Serialize, Deserialize)]
 pub struct GatewayConfig(BTreeMap<u16, NetworkState>);
+
+impl Deref for GatewayConfig {
+    type Target = BTreeMap<u16, NetworkState>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for GatewayConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
