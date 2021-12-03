@@ -18,7 +18,7 @@ pub enum GatewayError {
     Reqwest(#[from] reqwest::Error),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct GatewayConfig(BTreeMap<u16, NetworkState>);
 
 impl Deref for GatewayConfig {
