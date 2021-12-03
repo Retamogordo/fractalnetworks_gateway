@@ -1,6 +1,5 @@
 use crate::gateway::BRIDGE_NET;
-use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
-use wireguard_util::keys::Pubkey;
+use wireguard_util::keys::{Pubkey, Secret, Privkey};
 use anyhow::{anyhow, Context};
 use ipnet::IpNet;
 use ipnet::{IpAdd, Ipv4Net};
@@ -208,8 +207,8 @@ impl Forwarding {
 
 #[derive(Clone, Debug)]
 pub struct NetworkStats {
-    private_key: WireguardPrivkey,
-    pub public_key: WireguardPubkey,
+    private_key: Privkey,
+    pub public_key: Pubkey,
     listen_port: u16,
     fwmark: Option<u16>,
     peers: Vec<PeerStats>,
@@ -226,8 +225,8 @@ impl FromStr for NetworkStats {
             return Err(anyhow!("Wrong network stats line len"));
         }
         Ok(NetworkStats {
-            private_key: WireguardPrivkey::from_str(components[0])?,
-            public_key: WireguardPubkey::from_str(components[1])?,
+            private_key: Privkey::from_str(components[0])?,
+            public_key: Pubkey::from_str(components[1])?,
             listen_port: components[2].parse()?,
             fwmark: if components[3] == "off" {
                 None
@@ -249,8 +248,8 @@ impl NetworkStats {
 
 #[derive(Clone, Debug)]
 pub struct PeerStats {
-    pub public_key: WireguardPubkey,
-    preshared_key: Option<WireguardSecret>,
+    pub public_key: Pubkey,
+    preshared_key: Option<Secret>,
     endpoint: Option<SocketAddr>,
     allowed_ips: Vec<IpNet>,
     latest_handshake: usize,
@@ -267,11 +266,11 @@ impl FromStr for PeerStats {
             return Err(anyhow!("Wrong network stats line len"));
         }
         Ok(PeerStats {
-            public_key: WireguardPubkey::from_str(components[0])?,
+            public_key: Pubkey::from_str(components[0])?,
             preshared_key: if components[1] == "(none)" {
                 None
             } else {
-                Some(WireguardSecret::from_str(components[1])?)
+                Some(Secret::from_str(components[1])?)
             },
             endpoint: if components[2] == "(none)" {
                 None

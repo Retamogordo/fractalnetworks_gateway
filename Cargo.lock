@@ -653,7 +653,7 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#e2d37c8bcd3e7d9690ae1246a76f57334b40543d"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#fbeaec8b3da4c38b5fdad799430ca7a7f92026e8"
 dependencies = [
  "addr",
  "anyhow",

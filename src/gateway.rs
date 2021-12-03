@@ -10,6 +10,7 @@ use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
 use tera::Tera;
+use gateway_client::GatewayConfig;
 
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 const NGINX_MODULE_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";
@@ -36,8 +37,18 @@ lazy_static! {
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
-pub async fn apply(state: &[NetworkState]) -> Result<String> {
+pub async fn apply(config: &GatewayConfig) -> Result<String> {
     info!("Applying new state");
+
+    // turn config into list of network states
+    let state: Vec<NetworkState> = config
+        .iter()
+        .map(|(port, state)| {
+            let mut state = state.clone();
+            state.listen_port = *port;
+            state
+        })
+        .collect();
 
     // set up bridge
     apply_bridge(BRIDGE_INTERFACE, &vec![(*BRIDGE_NET).into()])
@@ -65,11 +76,11 @@ pub async fn apply(state: &[NetworkState]) -> Result<String> {
     }
 
     // for the rest, apply config
-    for network in state {
+    for network in &state {
         apply_network(network).await.context("Applying network")?;
     }
 
-    apply_nginx(state)
+    apply_nginx(&state)
         .await
         .context("Applying nginx configuration")?;
 
