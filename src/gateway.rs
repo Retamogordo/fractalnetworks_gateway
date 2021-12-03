@@ -1,6 +1,7 @@
 use crate::types::*;
 use crate::util::*;
 use anyhow::{Context, Result};
+use gateway_client::GatewayConfig;
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
@@ -9,8 +10,9 @@ use sqlx::{query_as, SqlitePool};
 use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
+use std::str::FromStr;
 use tera::Tera;
-use gateway_client::GatewayConfig;
+use wireguard_util::keys::Pubkey;
 
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 const NGINX_MODULE_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";
@@ -248,11 +250,6 @@ pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
 
 pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo> {
     let mut traffic_info = TrafficInfo::new(start_time);
-    let _network_pubkey: Vec<u8> = vec![];
-    let _network_pubkey_str = "".to_string();
-    let _device_pubkey: Vec<u8> = vec![];
-    let _device_pubkey_str = "".to_string();
-
     let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>(
         "SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time
             FROM gateway_traffic
@@ -266,8 +263,8 @@ pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo
     while let Some((network, device, rx, tx, time)) = rows.try_next().await? {
         let traffic = Traffic::new(rx as usize, tx as usize);
         let time = time as usize;
-        let network = base64::encode(&network);
-        let device = base64::encode(&device);
+        let network = Pubkey::try_from(&network[..])?;
+        let device = Pubkey::try_from(&device[..])?;
         traffic_info.add(network, device, time, traffic);
     }
 
