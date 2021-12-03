@@ -1,5 +1,6 @@
 use crate::gateway::BRIDGE_NET;
 use crate::wireguard::{WireguardPrivkey, WireguardPubkey, WireguardSecret};
+use wireguard_util::keys::Pubkey;
 use anyhow::{anyhow, Context};
 use ipnet::IpNet;
 use ipnet::{IpAdd, Ipv4Net};
@@ -11,36 +12,12 @@ use std::collections::{BTreeMap, HashMap};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use url::Url;
+pub use gateway_client::{NetworkState, PeerState, GatewayConfig};
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
 pub const WIREGUARD_PREFIX: &'static str = "wg";
 const PORT_MAPPING_START: u16 = 2000;
-
-#[serde_as]
-#[derive(Deserialize, Clone, Debug)]
-pub struct NetworkState {
-    #[serde_as(as = "DisplayFromStr")]
-    pub private_key: WireguardPrivkey,
-    #[serde(default)]
-    pub listen_port: u16,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub address: Vec<IpNet>,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
-    pub peers: BTreeMap<WireguardPubkey, PeerState>,
-    pub proxy: HashMap<Url, Vec<SocketAddr>>,
-}
-
-#[serde_as]
-#[derive(Deserialize, Clone, Debug)]
-pub struct PeerState {
-    #[serde(default)]
-    #[serde_as(as = "Option<DisplayFromStr>")]
-    pub preshared_key: Option<WireguardSecret>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub allowed_ips: Vec<IpNet>,
-    pub endpoint: Option<SocketAddr>,
-}
 
 #[derive(Serialize, Clone, Debug)]
 pub struct PortConfig {
@@ -57,8 +34,18 @@ pub struct PortMapping {
     ip_out: IpAddr,
 }
 
-impl NetworkState {
-    pub fn to_config(&self) -> String {
+pub trait NetworkStateExt {
+    fn to_config(&self) -> String;
+    fn netns_name(&self) -> String;
+    fn wgif_name(&self) -> String;
+    fn veth_name(&self) -> String;
+    fn veth_ipv4net(&self) -> Ipv4Net;
+    fn port_mappings(&self) -> Vec<(Url, u16, SocketAddr)>;
+    fn port_config(&self) -> PortConfig;
+}
+
+impl NetworkStateExt for NetworkState {
+    fn to_config(&self) -> String {
         let mut config = String::new();
         use std::fmt::Write;
         writeln!(config, "[Interface]").unwrap();
@@ -71,25 +58,25 @@ impl NetworkState {
         config
     }
 
-    pub fn netns_name(&self) -> String {
+    fn netns_name(&self) -> String {
         format!("{}{}", NETNS_PREFIX, self.listen_port)
     }
 
-    pub fn wgif_name(&self) -> String {
+    fn wgif_name(&self) -> String {
         format!("{}{}", WIREGUARD_PREFIX, self.listen_port)
     }
 
-    pub fn veth_name(&self) -> String {
+    fn veth_name(&self) -> String {
         format!("{}{}", VETH_PREFIX, self.listen_port)
     }
 
-    pub fn veth_ipv4net(&self) -> Ipv4Net {
+    fn veth_ipv4net(&self) -> Ipv4Net {
         let addr = BRIDGE_NET.network();
         let addr = addr.saturating_add(self.listen_port as u32);
         Ipv4Net::new(addr, BRIDGE_NET.prefix_len()).unwrap()
     }
 
-    pub fn port_mappings(&self) -> Vec<(Url, u16, SocketAddr)> {
+    fn port_mappings(&self) -> Vec<(Url, u16, SocketAddr)> {
         self.proxy
             .iter()
             .map(|(url, addrs)| addrs.iter().map(|a| (url.clone(), a)))
@@ -99,7 +86,7 @@ impl NetworkState {
             .collect()
     }
 
-    pub fn port_config(&self) -> PortConfig {
+    fn port_config(&self) -> PortConfig {
         PortConfig {
             interface_in: self.veth_name(),
             interface_out: self.wgif_name(),
@@ -117,8 +104,12 @@ impl NetworkState {
     }
 }
 
-impl PeerState {
-    pub fn to_config(&self, public_key: &WireguardPubkey) -> String {
+pub trait PeerStateExt {
+    fn to_config(&self, public_key: &Pubkey) -> String;
+}
+
+impl PeerStateExt for PeerState {
+    fn to_config(&self, public_key: &Pubkey) -> String {
         let mut config = String::new();
         use std::fmt::Write;
         writeln!(config, "[Peer]").unwrap();

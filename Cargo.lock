@@ -646,6 +646,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "url",
+ "wireguard-util",
  "x25519-dalek-fiat",
 ]
 
