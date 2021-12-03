@@ -1,11 +1,9 @@
 use crate::gateway;
 use crate::token::Token;
-use crate::types::*;
-use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
+use gateway_client::{GatewayConfig, TrafficInfo};
 use rocket::serde::json::Json;
 use rocket::*;
 use sqlx::SqlitePool;
-use std::collections::BTreeMap;
 
 #[post("/config.json", data = "<data>")]
 async fn config_set(_token: Token, data: Json<GatewayConfig>) -> String {

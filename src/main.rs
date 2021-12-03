@@ -28,7 +28,6 @@ mod token;
 mod types;
 mod util;
 mod watchdog;
-pub mod wireguard;
 
 use anyhow::Result;
 use sqlx::SqlitePool;

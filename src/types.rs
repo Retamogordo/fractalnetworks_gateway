@@ -1,13 +1,13 @@
 use crate::gateway::BRIDGE_NET;
 use anyhow::{anyhow, Context};
-use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
+use gateway_client::{NetworkState, PeerState};
 use ipnet::IpNet;
 use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
 use log::*;
 use rocket::serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
-use std::collections::{BTreeMap, HashMap};
+
+use std::collections::{BTreeMap};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use url::Url;

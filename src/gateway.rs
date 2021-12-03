@@ -1,7 +1,7 @@
 use crate::types::*;
 use crate::util::*;
 use anyhow::{Context, Result};
-use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
+use gateway_client::{GatewayConfig, NetworkState, Traffic, TrafficInfo};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
@@ -10,7 +10,6 @@ use sqlx::{query_as, SqlitePool};
 use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
-use std::str::FromStr;
 use tera::Tera;
 use wireguard_util::keys::Pubkey;
 
@@ -107,6 +106,7 @@ pub async fn apply_bridge(_name: &str, addr: &[IpNet]) -> Result<()> {
     Ok(())
 }
 
+/// Apply a given network state.
 pub async fn apply_network(network: &NetworkState) -> Result<()> {
     apply_netns(network).await?;
     apply_wireguard(network).await?;
@@ -115,6 +115,7 @@ pub async fn apply_network(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
+/// Given a network state, make sure the network namespace associated with it exists.
 pub async fn apply_netns(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
 
@@ -126,6 +127,7 @@ pub async fn apply_netns(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
+/// Apply the wireguard configuration associated with a network state.
 pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
     let wgif = network.wgif_name();
@@ -160,7 +162,9 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
+/// Given an interface and a network namespace, apply the address.
 pub async fn apply_addr(netns: Option<&str>, interface: &str, target: &[IpNet]) -> Result<()> {
+    // FIXME: this will not remove addresses.
     let current = addr_list(netns, interface).await?;
     for addr in target {
         if !current.contains(addr) {
@@ -179,6 +183,7 @@ pub async fn apply_interface_up(netns: Option<&str>, interface: &str) -> Result<
     Ok(())
 }
 
+/// Given a network state, apply the veth configuration by creating the veth pair.
 pub async fn apply_veth(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
 
@@ -222,6 +227,7 @@ pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &st
     Ok(())
 }
 
+/// Apply the forwarding configuration by writing out an iptables state and restoring it.
 pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
     let config = network.port_config();
@@ -232,6 +238,7 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     Ok(())
 }
 
+/// Apply an nginx configuration by writing out config files and restarting nginx.
 pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
     let mut forwarding = Forwarding::new();
     for network in networks {
@@ -248,6 +255,7 @@ pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
     Ok(())
 }
 
+/// Grab traffic data from the database.
 pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo> {
     let mut traffic_info = TrafficInfo::new(start_time);
     let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>(
