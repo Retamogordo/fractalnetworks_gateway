@@ -11,7 +11,7 @@ anyhow = "1.0.38"
 base64 = "0.13.0"
 rand_core = "0.6.2"
 x25519-dalek-fiat = "0.1.0"
-thiserror = "1.0.24"
+thiserror = "1.0"
 ipnet = "2.3.0"
 serde_with = "1.6.4"
 serde_json = "1.0.64"
@@ -26,3 +26,4 @@ tera = "1.7.0"
 futures = "0.3.13"
 url = { version = "2", features = ["serde"] }
 base32 = "0.4.0"
+gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client" }
