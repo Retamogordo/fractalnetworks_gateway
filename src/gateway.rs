@@ -1,7 +1,7 @@
 use crate::types::*;
 use crate::util::*;
 use anyhow::{Context, Result};
-use gateway_client::GatewayConfig;
+use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;

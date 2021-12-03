@@ -1,7 +1,7 @@
 use crate::gateway;
 use crate::token::Token;
 use crate::types::*;
-use gateway_client::GatewayConfig;
+use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
 use rocket::serde::json::Json;
 use rocket::*;
 use sqlx::SqlitePool;

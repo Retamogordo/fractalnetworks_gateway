@@ -1,6 +1,6 @@
 use crate::gateway::BRIDGE_NET;
 use anyhow::{anyhow, Context};
-pub use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
+use gateway_client::{GatewayConfig, NetworkState, PeerState, Traffic, TrafficInfo};
 use ipnet::IpNet;
 use ipnet::{IpAdd, Ipv4Net};
 use itertools::Itertools;
