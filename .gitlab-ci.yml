@@ -5,12 +5,6 @@ cache:
     - .cargo/
     - .cache/sccache
 
-before_script:
-  - export CARGO_HOME="${PWD}/.cargo"
-  - export SCCACHE_DIR="${PWD}/.cache/sccache"
-  - command -v git > /dev/null && git config --global credential.helper store || true
-  - echo "https://gitlab-deploy-token:$CI_DEPLOY_TOKEN@gitlab.com" >> ~/.git-credentials
-
 stages:
   - test
   - build
@@ -22,6 +16,7 @@ rustfmt:
   stage: test
   allow_failure: true
   script:
+    - ci-setup-cargo
     - cargo fmt -- --check
 
 # make sure there are no issues with the code.
@@ -30,6 +25,7 @@ clippy:
   stage: test
   allow_failure: true
   script:
+    - ci-setup-cargo
     - cargo clippy
 
 # run unit tests.
@@ -37,6 +33,7 @@ test:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: test
   script:
+    - ci-setup-cargo
     - cargo test
 
 # generate release build
@@ -44,6 +41,7 @@ build:amd64:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: build
   script:
+    - ci-setup-cargo
     - cargo build --bin client --release --features gateway-client
   artifacts:
     paths:
@@ -55,6 +53,7 @@ build:arm32:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm32
   stage: build
   script:
+    - ci-setup-cargo
     - cargo build --release --target arm-unknown-linux-gnueabihf --bin client --features gateway-client
   artifacts:
     paths:
@@ -66,6 +65,7 @@ build:arm64:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm64
   stage: build
   script:
+    - ci-setup-cargo
     - cargo build --release --target aarch64-unknown-linux-gnu --bin client --features gateway-client
   artifacts:
     paths:
@@ -77,6 +77,7 @@ rustdoc:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: build
   script:
+    - ci-setup-cargo
     - cargo doc --all-features --no-deps
   artifacts:
     paths:
