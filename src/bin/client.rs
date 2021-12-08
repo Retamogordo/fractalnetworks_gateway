@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use gateway_client::{Gateway, GatewayConfig, TrafficInfo};
+use gateway_client::{GatewayClient, GatewayConfig, TrafficInfo};
 use reqwest::{Client, ClientBuilder};
 use serde_json::to_string_pretty;
 use std::net::Ipv4Addr;

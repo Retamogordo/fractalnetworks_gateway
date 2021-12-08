@@ -167,7 +167,7 @@ impl DeviceTraffic {
 /// gateway server.
 #[cfg(feature = "client")]
 #[async_trait]
-pub trait Gateway {
+pub trait GatewayClient {
     /// Apply a new configuration to a gateway.
     async fn config_set(
         &self,
@@ -194,7 +194,7 @@ pub trait Gateway {
 
 #[cfg(feature = "client")]
 #[async_trait]
-impl Gateway for Url {
+impl GatewayClient for Url {
     async fn config_set(
         &self,
         client: &Client,
