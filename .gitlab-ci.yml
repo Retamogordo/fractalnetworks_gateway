@@ -35,6 +35,8 @@ test:
   script:
     - ci-setup-cargo
     - cargo test
+    - cargo test --features client
+    - cargo test --features gateway-client
 
 # generate release build
 build:amd64:
