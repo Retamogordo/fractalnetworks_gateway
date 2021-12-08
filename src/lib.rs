@@ -1,3 +1,4 @@
+#[cfg(feature = "client")]
 use async_trait::async_trait;
 use ipnet::IpNet;
 #[cfg(feature = "client")]
@@ -9,7 +10,7 @@ use std::net::SocketAddr;
 use std::ops::{Add, AddAssign, Deref, DerefMut};
 use thiserror::Error;
 use url::Url;
-use wireguard_util::keys::{Privkey, Pubkey, Secret};
+use wireguard_keys::{Privkey, Pubkey, Secret};
 
 #[derive(Error, Debug)]
 pub enum GatewayError {
