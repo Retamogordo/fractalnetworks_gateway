@@ -27,4 +27,4 @@ futures = "0.3.13"
 url = { version = "2", features = ["serde"] }
 base32 = "0.4.0"
 gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client" }
-wireguard-util = { git = "https://gitlab.com/fractalnetworks/wireguard-util" }
+wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys" }

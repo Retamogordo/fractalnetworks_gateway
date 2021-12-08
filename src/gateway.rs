@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
 use tera::Tera;
-use wireguard_util::keys::Pubkey;
+use wireguard_keys::Pubkey;
 
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
 const NGINX_MODULE_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";

@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use url::Url;
-use wireguard_util::keys::{Privkey, Pubkey, Secret};
+use wireguard_keys::{Privkey, Pubkey, Secret};
 
 pub const NETNS_PREFIX: &'static str = "network-";
 pub const VETH_PREFIX: &'static str = "veth";
