@@ -47,7 +47,6 @@ pub struct NetworkState {
     pub private_key: Privkey,
     #[serde(default)]
     pub listen_port: u16,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
     pub address: Vec<IpNet>,
     #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
     pub peers: BTreeMap<Pubkey, PeerState>,
@@ -60,7 +59,6 @@ pub struct PeerState {
     #[serde(default)]
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub preshared_key: Option<Secret>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
     pub allowed_ips: Vec<IpNet>,
     pub endpoint: Option<SocketAddr>,
 }
