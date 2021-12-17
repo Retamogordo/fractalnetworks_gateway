@@ -22,7 +22,7 @@ schemars = { version = "0.8.8", optional = true }
 [features]
 default = []
 api = ["reqwest"]
-schema = ["schemars", "wireguard-keys/with-schema"]
+schema = ["schemars", "wireguard-keys/schema"]
 cli = ["api", "structopt", "tokio/rt", "tokio/macros", "tokio/io-std", "tokio/fs", "serde_json"]
 
 [dev-dependencies]
