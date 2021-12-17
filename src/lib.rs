@@ -1,9 +1,9 @@
-#[cfg(feature = "client")]
+#[cfg(feature = "api")]
 use async_trait::async_trait;
 use ipnet::IpNet;
-#[cfg(feature = "client")]
+#[cfg(feature = "api")]
 use reqwest::Client;
-#[cfg(feature = "with-schema")]
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
@@ -18,7 +18,7 @@ use wireguard_keys::{Privkey, Pubkey, Secret};
 pub enum GatewayError {
     #[error("An unknown error has occured")]
     Unknown,
-    #[cfg(feature = "client")]
+    #[cfg(feature = "api")]
     #[error("An error making the request has occured: {0:}")]
     Reqwest(#[from] reqwest::Error),
 }
@@ -167,7 +167,7 @@ impl DeviceTraffic {
 
 /// Client for the gateway. These methods can be called to interface with a
 /// gateway server.
-#[cfg(feature = "client")]
+#[cfg(feature = "api")]
 #[async_trait]
 pub trait GatewayClient {
     /// Apply a new configuration to a gateway.
@@ -194,7 +194,7 @@ pub trait GatewayClient {
     ) -> Result<TrafficInfo, GatewayError>;
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "api")]
 #[async_trait]
 impl GatewayClient for Url {
     async fn config_set(

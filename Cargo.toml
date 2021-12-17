@@ -21,9 +21,9 @@ schemars = { version = "0.8.8", optional = true }
 
 [features]
 default = []
-client = ["reqwest"]
-with-schema = ["schemars", "wireguard-keys/with-schema"]
-gateway-client = ["client", "structopt", "tokio/rt", "tokio/macros", "tokio/io-std", "tokio/fs", "serde_json"]
+api = ["reqwest"]
+schema = ["schemars", "wireguard-keys/with-schema"]
+cli = ["api", "structopt", "tokio/rt", "tokio/macros", "tokio/io-std", "tokio/fs", "serde_json"]
 
 [dev-dependencies]
 tokio = { version = "1.3.0", features = ["full"] }
@@ -31,4 +31,4 @@ mockito = "0.30.0"
 
 [[bin]]
 name = "client"
-required-features = ["gateway-client"]
+required-features = ["cli"]

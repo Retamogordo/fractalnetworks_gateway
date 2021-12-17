@@ -34,9 +34,7 @@ test:
   stage: test
   script:
     - ci-setup-cargo
-    - cargo test
-    - cargo test --features client
-    - cargo test --features gateway-client
+    - cargo test --all-features
 
 # generate release build
 build:amd64:
@@ -44,7 +42,7 @@ build:amd64:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo build --bin client --release --features gateway-client
+    - cargo build --release --features cli
   artifacts:
     paths:
       - target/release/client
@@ -56,7 +54,7 @@ build:arm32:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo build --release --target arm-unknown-linux-gnueabihf --bin client --features gateway-client
+    - cargo build --release --target arm-unknown-linux-gnueabihf --features cli
   artifacts:
     paths:
       - target/arm-unknown-linux-gnueabihf/release/client
@@ -68,7 +66,7 @@ build:arm64:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo build --release --target aarch64-unknown-linux-gnu --bin client --features gateway-client
+    - cargo build --release --target aarch64-unknown-linux-gnu --features cli
   artifacts:
     paths:
       - target/aarch64-unknown-linux-gnu/release/client
