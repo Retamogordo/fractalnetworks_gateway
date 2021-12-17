@@ -3,6 +3,8 @@ use async_trait::async_trait;
 use ipnet::IpNet;
 #[cfg(feature = "client")]
 use reqwest::Client;
+#[cfg(feature = "with-schema")]
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap};
@@ -63,6 +65,7 @@ pub struct PeerState {
     pub endpoint: Option<SocketAddr>,
 }
 
+#[cfg_attr(feature = "with-schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
 pub struct Traffic {
     pub rx: usize,
@@ -150,6 +153,7 @@ impl NetworkTraffic {
     }
 }
 
+#[cfg_attr(feature = "with-schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DeviceTraffic {
     traffic: Traffic,
