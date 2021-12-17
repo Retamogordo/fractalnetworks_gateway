@@ -648,7 +648,7 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#01ea39a6edcf2ce4260ac9c5ea1814178697fe0a"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#fb42b7141fc97a693603c52a97df90f1517cd403"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2749,7 +2749,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "wireguard-keys"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/wireguard-keys#49ae7e78949bdce537e161e92b5a9feed1fc812a"
+source = "git+https://gitlab.com/fractalnetworks/wireguard-keys#d9e7ebe6e3d2c05a58aff519de4667cc6f6a315d"
 dependencies = [
  "base32",
  "base64",

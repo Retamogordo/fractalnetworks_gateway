@@ -1,7 +1,7 @@
 use crate::gateway::BRIDGE_NET;
 use anyhow::{anyhow, Context};
 use gateway_client::{NetworkState, PeerState};
-use ipnet::{IpNet, IpAdd, Ipv4Net};
+use ipnet::{IpAdd, IpNet, Ipv4Net};
 use itertools::Itertools;
 use log::*;
 use rocket::serde::{Deserialize, Serialize};
