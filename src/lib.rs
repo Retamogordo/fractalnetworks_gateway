@@ -6,7 +6,6 @@ use reqwest::Client;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap};
 use std::net::SocketAddr;
 use std::ops::{Add, AddAssign, Deref, DerefMut};
@@ -40,30 +39,27 @@ impl DerefMut for GatewayConfig {
     }
 }
 
-#[serde_as]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NetworkState {
-    #[serde_as(as = "DisplayFromStr")]
     pub private_key: Privkey,
     #[serde(default)]
     pub listen_port: u16,
     pub address: Vec<IpNet>,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
     pub peers: BTreeMap<Pubkey, PeerState>,
     pub proxy: HashMap<Url, Vec<SocketAddr>>,
 }
 
-#[serde_as]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PeerState {
     #[serde(default)]
-    #[serde_as(as = "Option<DisplayFromStr>")]
     pub preshared_key: Option<Secret>,
     pub allowed_ips: Vec<IpNet>,
     pub endpoint: Option<SocketAddr>,
 }
 
-#[cfg_attr(feature = "with-schema", derive(JsonSchema))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
 pub struct Traffic {
     pub rx: usize,
@@ -101,13 +97,12 @@ impl Traffic {
     }
 }
 
-#[serde_as]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TrafficInfo {
     start_time: usize,
     stop_time: usize,
     traffic: Traffic,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
     networks: BTreeMap<Pubkey, NetworkTraffic>,
 }
 
@@ -132,11 +127,10 @@ impl TrafficInfo {
     }
 }
 
-#[serde_as]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct NetworkTraffic {
     traffic: Traffic,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
     devices: BTreeMap<Pubkey, DeviceTraffic>,
 }
 
@@ -151,7 +145,7 @@ impl NetworkTraffic {
     }
 }
 
-#[cfg_attr(feature = "with-schema", derive(JsonSchema))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DeviceTraffic {
     traffic: Traffic,
