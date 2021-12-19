@@ -13,6 +13,7 @@ use thiserror::Error;
 use url::Url;
 use wireguard_keys::{Privkey, Pubkey, Secret};
 
+/// Possible errors that can happen when making a request to the gateway.
 #[derive(Error, Debug)]
 pub enum GatewayError {
     #[error("An unknown error has occured")]
@@ -22,6 +23,7 @@ pub enum GatewayError {
     Reqwest(#[from] reqwest::Error),
 }
 
+/// Represents the entire configuration state of the gateway.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct GatewayConfig(BTreeMap<u16, NetworkState>);
@@ -40,30 +42,43 @@ impl DerefMut for GatewayConfig {
     }
 }
 
+/// Represents the configuration state of one particular WireGuard network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NetworkState {
+    /// WireGuard private key
     pub private_key: Privkey,
+    /// UDP port this network is reachable on
     #[serde(default)]
     pub listen_port: u16,
+    /// Subnet for this network.
     pub address: Vec<IpNet>,
+    /// Configuration state for peers in this network
     pub peers: BTreeMap<Pubkey, PeerState>,
+    /// Forwarding settings for this network
     pub proxy: HashMap<Url, Vec<SocketAddr>>,
 }
 
+/// Represents the configuration state of one particular peer of a WireGuard network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PeerState {
+    /// Preshared key for this peer
     #[serde(default)]
     pub preshared_key: Option<Secret>,
+    /// Allowed IP addresses of this peer
     pub allowed_ips: Vec<IpNet>,
+    /// Last connected endpoint, used to resume talking to peer
     pub endpoint: Option<SocketAddr>,
 }
 
+/// Represents a single traffic item, consisting of received and sent bytes.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
 pub struct Traffic {
+    /// Received bytes
     pub rx: usize,
+    /// Sent bytes
     pub tx: usize,
 }
 
@@ -98,12 +113,17 @@ impl Traffic {
     }
 }
 
+/// Traffic data from the gateway for one particular time slice.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TrafficInfo {
+    /// Stat of time slice, as UNIX timestamp
     start_time: usize,
+    /// End of time slice, as UNIX timestamp
     stop_time: usize,
+    /// Sum of all traffic occuring in this time slice.
     traffic: Traffic,
+    /// Traffic by network
     networks: BTreeMap<Pubkey, NetworkTraffic>,
 }
 
@@ -128,10 +148,13 @@ impl TrafficInfo {
     }
 }
 
+/// Traffic that occured within one particular network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct NetworkTraffic {
+    /// Total traffic occuring in this network.
     traffic: Traffic,
+    /// Traffic per device.
     devices: BTreeMap<Pubkey, DeviceTraffic>,
 }
 
@@ -146,10 +169,13 @@ impl NetworkTraffic {
     }
 }
 
+/// Traffic occuring from one particular peer in the network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DeviceTraffic {
+    /// Total traffic from this peer
     traffic: Traffic,
+    /// Map of timestamps and traffic generated
     times: BTreeMap<usize, Traffic>,
 }
 
