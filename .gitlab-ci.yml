@@ -19,6 +19,7 @@ rustfmt:
   script:
     - ci-setup-cargo
     - cargo fmt -- --check
+  interruptible: true
 
 # make sure there are no issues with the code.
 clippy:
@@ -28,6 +29,7 @@ clippy:
   script:
     - ci-setup-cargo
     - cargo clippy
+  interruptible: true
 
 # run unit tests.
 test:
@@ -36,6 +38,7 @@ test:
   script:
     - ci-setup-cargo
     - cargo test
+  interruptible: true
 
 # generate release build
 build:amd64:
@@ -48,6 +51,7 @@ build:amd64:
     paths:
       - target/release/gateway
     expire_in: 1 week
+  interruptible: true
 
 # build for arm target
 build:arm32:
@@ -60,6 +64,7 @@ build:arm32:
     paths:
       - target/arm-unknown-linux-gnueabihf/release/gateway
     expire_in: 1 week
+  interruptible: true
 
 # build for arm target
 build:arm64:
@@ -72,6 +77,7 @@ build:arm64:
     paths:
       - target/aarch64-unknown-linux-gnu/release/gateway
     expire_in: 1 week
+  interruptible: true
 
 # generate swagger API docs.
 openapi:
@@ -86,6 +92,7 @@ openapi:
     paths:
       - target/openapi
     expire_in: 1 week
+  interruptible: true
 
 # generate rust html documentation
 rustdoc:
@@ -98,6 +105,7 @@ rustdoc:
     paths:
       - target/doc
     expire_in: 1 week
+  interruptible: true
 
 docker:
   dependencies:
