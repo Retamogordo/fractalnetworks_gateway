@@ -102,7 +102,7 @@ rustdoc:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo doc
+    - cargo doc --no-deps
   artifacts:
     paths:
       - target/doc
