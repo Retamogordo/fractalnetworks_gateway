@@ -23,3 +23,7 @@ Resources:
 [registry]: https://gitlab.com/fractalnetworks/gateway-client/container_registry
 
 To build this, you want to run `make setup-git` because it will use your SSH keys instead of asking for git credentials (and possibly requiring 2-factor authentication).
+
+## Features
+
+- `schema` adds `JsonSchema` implementations for all types
