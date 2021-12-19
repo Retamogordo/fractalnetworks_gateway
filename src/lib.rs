@@ -22,6 +22,7 @@ pub enum GatewayError {
     Reqwest(#[from] reqwest::Error),
 }
 
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct GatewayConfig(BTreeMap<u16, NetworkState>);
 
