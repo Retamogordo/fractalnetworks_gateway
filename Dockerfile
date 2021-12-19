@@ -9,7 +9,7 @@ ENV ROCKET_PORT=${GATEWAY_PORT}
 ENV RUST_LOG=info,sqlx=warn
 ENV RUST_BACKTRACE=1
 
-RUN apt update && apt install -y iptables iproute2 wireguard-tools nginx && apt clean
+RUN apt update && apt install -y --no-install-recommends iptables iproute2 wireguard-tools nginx && rm -rf /var/lib/apt/lists/*
 COPY /target/release/gateway /usr/local/bin/gateway
 COPY scripts/entrypoint.sh /bin/entrypoint.sh
 

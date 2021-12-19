@@ -44,11 +44,11 @@ struct Options {
     openapi: bool,
 
     /// What database file to use to log traffic data to.
-    #[structopt(long, short)]
+    #[structopt(long, short, env = "GATEWAY_DATABASE")]
     database: Option<String>,
 
     /// Security token used to authenticate API requests.
-    #[structopt(long, short)]
+    #[structopt(long, short, env = "GATEWAY_TOKEN")]
     secret: String,
 
     /// Interval to run watchdog at.
