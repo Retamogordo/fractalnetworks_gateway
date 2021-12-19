@@ -9,7 +9,6 @@ stages:
   - test
   - build
   - docker
-  - integration
   - deploy
 
 # make sure that formatting is correct.
@@ -78,10 +77,11 @@ build:arm64:
 openapi:
   allow_failure: true
   stage: build
-  image: openapitools/openapi-generator-cli
+  image: registry.gitlab.com/fractalnetworks/images/rust:stable-amd64
   script:
-    - java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -i api/gateway_0.1.0.yaml -g html2 -o target/openapi
-    - java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -i api/gateway_0.1.0.yaml -g openapi -o target/openapi
+    - cargo build --features openapi
+    - mkdir -p target/openapi
+    - target/debug/gateway --secret abc --openapi > target/openapi/openapi.json
   artifacts:
     paths:
       - target/openapi
@@ -99,6 +99,20 @@ rustdoc:
       - target/doc
     expire_in: 1 week
 
+docker:
+  dependencies:
+    - build:amd64
+  image: docker
+  stage: docker
+  services:
+    - docker:dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build . -t "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  only:
+    - master
+
 # publish binary, docs and API docs to gitlab pages.
 pages:
   image: registry.gitlab.com/fractalnetworks/images/pages
@@ -112,7 +126,7 @@ pages:
   script:
     - mkdir public
     - mv target/doc public/doc
-    - mv target/openapi public/api
+    - mv target/openapi public/openapi
     - mv target/release/gateway public/gateway-master-amd64
     - sign public/gateway-master-amd64
     - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm32
@@ -123,45 +137,5 @@ pages:
     paths:
       - public
     expire_in: 1 week
-  only:
-    - master
-
-docker:build:
-  dependencies:
-    - build:amd64
-  image: docker
-  stage: docker
-  services:
-    - docker:dind
-  script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker build . -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-
-integration:
-  image: registry.gitlab.com/fractalnetworks/images/test
-  dependencies: []
-  tags:
-    - cijoe
-  services:
-    - name: "registry.gitlab.com/fractalnetworks/gateway:$CI_COMMIT_REF_SLUG"
-      alias: gateway
-  stage: integration
-  script:
-    - ./scripts/apply.sh --token abc --server gateway:8000 scripts/state.json
-    - ./scripts/test.sh
-
-docker:publish:
-  dependencies:
-    - build:amd64
-  image: docker
-  stage: deploy
-  services:
-    - docker:dind
-  script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$CI_REGISTRY_IMAGE:latest"
-    - docker push "$CI_REGISTRY_IMAGE:latest"
   only:
     - master
