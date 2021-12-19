@@ -85,6 +85,7 @@ openapi:
   stage: build
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-amd64
   script:
+    - ci-setup-cargo
     - cargo build --features openapi
     - mkdir -p target/openapi
     - target/debug/gateway --secret abc --openapi > target/openapi/openapi.json
