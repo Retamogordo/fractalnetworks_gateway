@@ -89,6 +89,7 @@ openapi:
     - cargo build --features openapi
     - mkdir -p target/openapi
     - target/debug/gateway --secret abc --openapi > target/openapi/openapi.json
+    - cp scripts/rapidoc.html target/openapi/index.html
   artifacts:
     paths:
       - target/openapi
@@ -135,7 +136,7 @@ pages:
   script:
     - mkdir public
     - mv target/doc public/doc
-    - mv target/openapi public/openapi
+    - mv target/openapi public/api
     - mv target/release/gateway public/gateway-master-amd64
     - sign public/gateway-master-amd64
     - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm32
