@@ -1,6 +1,9 @@
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Outcome, Request};
+#[cfg(feature = "openapi")]
+use rocket_okapi::request::OpenApiFromRequest;
 
+#[cfg_attr(feature = "openapi", derive(OpenApiFromRequest))]
 #[derive(Clone, Debug)]
 pub struct Token {
     value: String,

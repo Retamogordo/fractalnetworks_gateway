@@ -39,6 +39,10 @@ use tokio::fs::File;
 
 #[derive(StructOpt, Clone, Debug)]
 struct Options {
+    #[cfg(feature = "openapi")]
+    #[structopt(long, short)]
+    openapi: bool,
+
     /// What database file to use to log traffic data to.
     #[structopt(long, short)]
     database: Option<String>,
@@ -64,6 +68,13 @@ struct Options {
 async fn main() -> Result<()> {
     env_logger::init();
     let options = Options::from_args();
+
+    #[cfg(feature = "openapi")]
+    if options.openapi {
+        let openapi = api::openapi_json();
+        println!("{}", serde_json::to_string(&openapi)?);
+        return Ok(());
+    }
 
     // create database if not exists
     if let Some(database) = &options.database {
