@@ -12,10 +12,29 @@ Builds:
 
 Containers:
 - [`registry.gitlab.com/fractalnetworks/gateway`][registry]
+    - `GATEWAY_PORT`: port to listen on, default 8000.
+    - `GATEWAY_TOKEN`: secret authentication token, default `abc`.
+    - `GATEWAY_DATABASE`: path to SQLite database, default `/tmp/gateway.db`.
 
 Resources:
 - [Source Documentation][rustdoc]
 - [API Documentation][openapi]
+
+## Features
+
+Optional features.
+
+- `openapi` ability to generate OpenAPI specification. This adds the `--openapi` command-line option,
+  which causes it to print the OpenAPI specification as JSON and exit.
+
+## Building
+
+You may have to run `make setup-git` before being able to compile it in order for it
+to be able to fetch dependencies from GitLab.
+
+    cargo build --release
+
+The binary will then be available in `target/release`.
 
 ## Background
 
