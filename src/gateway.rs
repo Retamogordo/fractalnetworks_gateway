@@ -1,5 +1,6 @@
 use crate::types::*;
 use crate::util::*;
+use crate::Options;
 use anyhow::{Context, Result};
 use gateway_client::{GatewayConfig, NetworkState, Traffic, TrafficInfo};
 use ipnet::{IpNet, Ipv4Net};
@@ -38,7 +39,7 @@ lazy_static! {
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
-pub async fn apply(config: &GatewayConfig) -> Result<String> {
+pub async fn apply(config: &GatewayConfig, options: &Options) -> Result<String> {
     info!("Applying new state");
 
     // turn config into list of network states
@@ -81,7 +82,7 @@ pub async fn apply(config: &GatewayConfig) -> Result<String> {
         apply_network(network).await.context("Applying network")?;
     }
 
-    apply_nginx(&state)
+    apply_nginx(&state, &options)
         .await
         .context("Applying nginx configuration")?;
 
@@ -239,11 +240,18 @@ pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
 }
 
 /// Apply an nginx configuration by writing out config files and restarting nginx.
-pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
+pub async fn apply_nginx(networks: &[NetworkState], options: &Options) -> Result<()> {
     let mut forwarding = Forwarding::new();
     for network in networks {
         forwarding.add(network);
     }
+
+    // add custom forwarding from command-line options
+    for (url, socket) in &options.custom_forwarding {
+        forwarding.add_custom(url, *socket);
+    }
+
+    // fill NGINX template
     let context = tera::Context::from_serialize(&forwarding)?;
     let config = TERA_TEMPLATES.render("nginx.conf", &context)?;
     tokio::fs::write(Path::new(NGINX_MODULE_PATH), config.as_bytes()).await?;
@@ -252,6 +260,7 @@ pub async fn apply_nginx(networks: &[NetworkState]) -> Result<()> {
     tokio::fs::write(Path::new(NGINX_SITE_PATH), config.as_bytes()).await?;
 
     nginx_reload().await?;
+
     Ok(())
 }
 

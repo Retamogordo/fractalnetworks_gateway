@@ -202,6 +202,14 @@ impl Forwarding {
     }
 
     pub fn add_ssh(&mut self, _url: &Url, _socket: SocketAddr) {}
+
+    pub fn add_custom(&mut self, url: &Url, socket: SocketAddr) {
+        match url.scheme() {
+            "https" => self.add_https(url, socket),
+            "http" => self.add_http(url, socket),
+            _other => error!("Unrecognized URL scheme: {}", url),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

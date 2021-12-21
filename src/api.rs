@@ -1,5 +1,5 @@
-use crate::gateway;
 use crate::token::Token;
+use crate::{gateway, Options};
 use gateway_client::{GatewayConfig, TrafficInfo};
 #[cfg(feature = "openapi")]
 use okapi::openapi3::OpenApi;
@@ -11,8 +11,8 @@ use sqlx::SqlitePool;
 
 #[cfg_attr(feature = "openapi", openapi)]
 #[post("/config.json", data = "<data>")]
-async fn config_set(_token: Token, data: Json<GatewayConfig>) -> String {
-    gateway::apply(&data).await.unwrap()
+async fn config_set(_token: Token, data: Json<GatewayConfig>, options: &State<Options>) -> String {
+    gateway::apply(&data, &options).await.unwrap()
 }
 
 #[cfg_attr(feature = "openapi", openapi)]

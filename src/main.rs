@@ -29,16 +29,19 @@ mod types;
 mod util;
 mod watchdog;
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use sqlx::SqlitePool;
+use std::net::SocketAddr;
 use std::path::Path;
+use std::str::FromStr;
 use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
 use tokio::fs::File;
+use url::Url;
 
 #[derive(StructOpt, Clone, Debug)]
-struct Options {
+pub struct Options {
     #[cfg(feature = "openapi")]
     #[structopt(long, short)]
     openapi: bool,
@@ -62,6 +65,21 @@ struct Options {
     /// Duration for which network data is retained.
     #[structopt(long, short, default_value="24h", parse(try_from_str = parse_duration::parse::parse))]
     retention: Duration,
+
+    /// Add custom HTTPS forwarding
+    #[structopt(long, env = "GATEWAY_CUSTOM_FORWARDING", parse(try_from_str = parse_custom_forwarding))]
+    custom_forwarding: Vec<(Url, SocketAddr)>,
+}
+
+/// Given a forwarding scheme like `https://domain.com=127.0.0.1:8000`, parse it
+/// into URL and SocketAddr.
+fn parse_custom_forwarding(text: &str) -> Result<(Url, SocketAddr)> {
+    let mut parts = text.split("=");
+    let url_part = parts.next().ok_or(anyhow!("Missing URL part"))?;
+    let url = Url::parse(url_part).context("While parsing forwarding URL")?;
+    let socket_part = parts.next().ok_or(anyhow!("Missing socket part"))?;
+    let socket = SocketAddr::from_str(socket_part)?;
+    Ok((url, socket))
 }
 
 #[rocket::main]
@@ -84,7 +102,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let database_string = options.database.unwrap_or_else(|| ":memory:".to_string());
+    let database_string = options.database.as_deref().unwrap_or_else(|| ":memory:");
 
     // connect and migrate database
     let pool = SqlitePool::connect(&database_string).await?;
@@ -118,6 +136,7 @@ async fn main() -> Result<()> {
         .mount("/api/v1", api::routes())
         .manage(Token::new(&options.secret))
         .manage(pool)
+        .manage(options)
         .launch()
         .await?;
 
