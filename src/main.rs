@@ -67,7 +67,7 @@ pub struct Options {
     retention: Duration,
 
     /// Add custom HTTPS forwarding
-    #[structopt(long, env = "GATEWAY_CUSTOM_FORWARDING", parse(try_from_str = parse_custom_forwarding))]
+    #[structopt(long, env = "GATEWAY_CUSTOM_FORWARDING", parse(try_from_str = parse_custom_forwarding), use_delimiter = true)]
     custom_forwarding: Vec<(Url, SocketAddr)>,
 }
 
