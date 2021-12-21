@@ -47,6 +47,9 @@ lazy_static! {
 pub async fn startup(options: &Options) -> Result<()> {
     let module_path = Path::new(NGINX_MODULE_PATH);
     if !module_path.is_file() {
+        for (url, socket) in &options.custom_forwarding {
+            info!("Custom forwarding: {} => {:?}", url.to_string(), socket);
+        }
         apply_nginx(&[], options).await?;
     }
 
