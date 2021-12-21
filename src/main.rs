@@ -131,6 +131,8 @@ async fn main() -> Result<()> {
         }
     });
 
+    gateway::startup(&options).await?;
+
     // launch REST API
     rocket::build()
         .mount("/api/v1", api::routes())

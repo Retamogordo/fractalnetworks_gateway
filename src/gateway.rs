@@ -14,9 +14,15 @@ use std::path::Path;
 use tera::Tera;
 use wireguard_keys::Pubkey;
 
+/// Name of the bride network interface to use
 const BRIDGE_INTERFACE: &'static str = "ensbr0";
+
+/// Path of the NGINX modules configuration
 const NGINX_MODULE_PATH: &'static str = "/etc/nginx/modules-enabled/gateway.conf";
+
+/// Path of the NGINX site configuration
 const NGINX_SITE_PATH: &'static str = "/etc/nginx/sites-enabled/gateway.conf";
+
 lazy_static! {
     pub static ref BRIDGE_NET: Ipv4Net = Ipv4Net::new(Ipv4Addr::new(172, 99, 0, 1), 16).unwrap();
     pub static ref TERA_TEMPLATES: Tera = {
@@ -35,6 +41,16 @@ lazy_static! {
         .unwrap();
         tera
     };
+}
+
+/// Called on a fresh start, initialize NGINX config if needed.
+pub async fn startup(options: &Options) -> Result<()> {
+    let module_path = Path::new(NGINX_MODULE_PATH);
+    if !module_path.is_file() {
+        apply_nginx(&[], options).await?;
+    }
+
+    Ok(())
 }
 
 /// Given a new state, do whatever needs to be done to get the system in that
