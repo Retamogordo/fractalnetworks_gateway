@@ -41,11 +41,22 @@ use tokio::fs::File;
 use url::Url;
 
 #[derive(StructOpt, Clone, Debug)]
-pub struct Options {
+pub enum Command {
+    /// Run gateway.
+    Run(Options),
+    /// Generate OpenAPI documentation.
     #[cfg(feature = "openapi")]
-    #[structopt(long, short)]
-    openapi: bool,
+    Openapi,
+    /// Migrate database.
+    Migrate {
+        /// What database file to use to log traffic data to.
+        #[structopt(long, short, env = "GATEWAY_DATABASE")]
+        database: String,
+    },
+}
 
+#[derive(StructOpt, Clone, Debug)]
+pub struct Options {
     /// What database file to use to log traffic data to.
     #[structopt(long, short, env = "GATEWAY_DATABASE")]
     database: Option<String>,
@@ -82,65 +93,80 @@ fn parse_custom_forwarding(text: &str) -> Result<(Url, SocketAddr)> {
     Ok((url, socket))
 }
 
+impl Options {
+    pub async fn run(self) -> Result<()> {
+        // create database if not exists
+        if let Some(database) = &self.database {
+            let database = Path::new(&database);
+            if !database.exists() {
+                File::create(database).await?;
+            }
+        }
+
+        let database_string = self.database.as_deref().unwrap_or_else(|| ":memory:");
+
+        // connect and migrate database
+        let pool = SqlitePool::connect(&database_string).await?;
+        sqlx::migrate!().run(&pool).await?;
+
+        // launch watchdog, which after the interval will pull in traffic stats
+        // and make sure that everything is running as it should.
+        let pool_clone = pool.clone();
+        rocket::tokio::spawn(async move {
+            loop {
+                match watchdog::watchdog(&pool_clone, self.watchdog).await {
+                    Ok(_) => {}
+                    Err(e) => log::error!("{}", e),
+                }
+            }
+        });
+
+        // launch garbage collector, which prunes old traffic stats from database
+        let pool_clone = pool.clone();
+        rocket::tokio::spawn(async move {
+            loop {
+                match garbage::garbage(&pool_clone, self.garbage, self.retention).await {
+                    Ok(_) => {}
+                    Err(e) => log::error!("{}", e),
+                }
+            }
+        });
+
+        gateway::startup(&self).await?;
+
+        // launch REST API
+        rocket::build()
+            .mount("/api/v1", api::routes())
+            .manage(Token::new(&self.secret))
+            .manage(pool)
+            .manage(self.clone())
+            .launch()
+            .await?;
+
+        Ok(())
+    }
+}
+
 #[rocket::main]
 async fn main() -> Result<()> {
     env_logger::init();
-    let options = Options::from_args();
+    let command = Command::from_args();
 
-    #[cfg(feature = "openapi")]
-    if options.openapi {
-        let openapi = api::openapi_json();
-        println!("{}", serde_json::to_string(&openapi)?);
-        return Ok(());
-    }
-
-    // create database if not exists
-    if let Some(database) = &options.database {
-        let database = Path::new(&database);
-        if !database.exists() {
-            File::create(database).await?;
+    match command {
+        #[cfg(feature = "openapi")]
+        Command::Openapi => {
+            let openapi = api::openapi_json();
+            println!("{}", serde_json::to_string(&openapi)?);
+            Ok(());
+        }
+        Command::Migrate { database } => {
+            let pool = SqlitePool::connect(&database).await?;
+            sqlx::migrate!().run(&pool).await?;
+            Ok(())
+        }
+        Command::Run(options) => {
+            options.run().await?;
+            Ok(())
         }
     }
-
-    let database_string = options.database.as_deref().unwrap_or_else(|| ":memory:");
-
-    // connect and migrate database
-    let pool = SqlitePool::connect(&database_string).await?;
-    sqlx::migrate!().run(&pool).await?;
-
-    // launch watchdog, which after the interval will pull in traffic stats
-    // and make sure that everything is running as it should.
-    let pool_clone = pool.clone();
-    rocket::tokio::spawn(async move {
-        loop {
-            match watchdog::watchdog(&pool_clone, options.watchdog).await {
-                Ok(_) => {}
-                Err(e) => log::error!("{}", e),
-            }
-        }
-    });
-
-    // launch garbage collector, which prunes old traffic stats from database
-    let pool_clone = pool.clone();
-    rocket::tokio::spawn(async move {
-        loop {
-            match garbage::garbage(&pool_clone, options.garbage, options.retention).await {
-                Ok(_) => {}
-                Err(e) => log::error!("{}", e),
-            }
-        }
-    });
-
-    gateway::startup(&options).await?;
-
-    // launch REST API
-    rocket::build()
-        .mount("/api/v1", api::routes())
-        .manage(Token::new(&options.secret))
-        .manage(pool)
-        .manage(options)
-        .launch()
-        .await?;
-
-    Ok(())
 }
