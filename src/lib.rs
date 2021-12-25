@@ -42,6 +42,11 @@ impl DerefMut for GatewayConfig {
     }
 }
 
+/// Default MTU for WireGuard networks.
+fn default_mtu() -> usize {
+    1420
+}
+
 /// Represents the configuration state of one particular WireGuard network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -51,6 +56,9 @@ pub struct NetworkState {
     /// UDP port this network is reachable on
     #[serde(default)]
     pub listen_port: u16,
+    /// MTU (maximum packet size) for network.
+    #[serde(default = "default_mtu")]
+    pub mtu: usize,
     /// Subnet for this network.
     pub address: Vec<IpNet>,
     /// Configuration state for peers in this network
