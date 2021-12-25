@@ -1,6 +1,7 @@
 use crate::types::*;
 use crate::util::*;
 use crate::Options;
+use anyhow::anyhow;
 use anyhow::{Context, Result};
 use gateway_client::{GatewayConfig, NetworkState, Traffic, TrafficInfo};
 use ipnet::{IpNet, Ipv4Net};
@@ -157,6 +158,14 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
         info!("Wireguard network does not exist");
         // create wireguard config in netns
         wireguard_create(&netns, &wgif).await?;
+    }
+
+    let show = interface_show(Some(&netns), &wgif).await?;
+    let mtu = show
+        .mtu
+        .ok_or(anyhow!("Missing MTU for WireGuard network"))?;
+    if mtu != network.mtu {
+        interface_mtu(Some(&netns), &wgif, network.mtu).await?;
     }
 
     apply_interface_up(Some(&netns), &wgif)

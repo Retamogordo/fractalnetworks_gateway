@@ -2,6 +2,7 @@
     "12312": {
         "private_key": "2PGDeXYynfKqJH4k0sUgKeRKpL4DUGGLTKnPjKViZFk=",
         "address": ["10.0.0.1/16"],
+        "mtu": 1400,
         "peers": {
             "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=": {
                 "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",

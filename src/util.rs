@@ -13,6 +13,8 @@ pub const IPTABLES_SAVE_PATH: &'static str = "/usr/sbin/iptables-save";
 pub const IPTABLES_RESTORE_PATH: &'static str = "/usr/sbin/iptables-restore";
 pub const IP_PATH: &'static str = "/usr/sbin/ip";
 
+/// Adds a network namespace. This creates a new, isolated network namespace
+/// with nothing but the loopback interface in it.
 pub async fn netns_add(name: &str) -> Result<()> {
     info!("netns add {}", name);
     let success = Command::new(IP_PATH)
@@ -28,6 +30,8 @@ pub async fn netns_add(name: &str) -> Result<()> {
     }
 }
 
+/// Checks if a network namespaces exists.
+/// TODO: use `ip --json netns list` here.
 pub async fn netns_exists(name: &str) -> Result<bool> {
     let success = Command::new(IP_PATH)
         .arg("netns")
@@ -40,6 +44,7 @@ pub async fn netns_exists(name: &str) -> Result<bool> {
     Ok(success)
 }
 
+/// Delete a network namespace. This will also delete any network interfaces contained therein.
 pub async fn netns_del(name: &str) -> Result<()> {
     info!("netns del {}", name);
     let success = Command::new(IP_PATH)
@@ -55,6 +60,7 @@ pub async fn netns_del(name: &str) -> Result<()> {
     }
 }
 
+/// Write file into network namespace config folder.
 pub async fn netns_write_file(netns: &str, filename: &Path, data: &str) -> Result<()> {
     let mut path = PathBuf::from("/etc/netns");
     path.push(netns);
@@ -67,6 +73,7 @@ pub async fn netns_write_file(netns: &str, filename: &Path, data: &str) -> Resul
     Ok(())
 }
 
+/// List all network namespaces.
 pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     let output = Command::new(IP_PATH)
         .arg("--json")
@@ -85,6 +92,7 @@ pub async fn netns_list() -> Result<Vec<NetnsItem>> {
     Ok(items)
 }
 
+/// Add an address to an interface
 pub async fn addr_add(netns: Option<&str>, interface: &str, addr: IpNet) -> Result<()> {
     info!("addr add {:?}, {}, {}", netns, interface, addr);
     let mut command = Command::new(IP_PATH);
@@ -106,6 +114,7 @@ pub async fn addr_add(netns: Option<&str>, interface: &str, addr: IpNet) -> Resu
     Ok(())
 }
 
+/// Create bridge interface.
 pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
     info!("bridge_add({:?}, {})", netns, interface);
     let mut command = Command::new(IP_PATH);
@@ -131,6 +140,7 @@ pub async fn bridge_add(netns: Option<&str>, interface: &str) -> Result<()> {
     Ok(())
 }
 
+/// Check if bridge interface exists.
 pub async fn bridge_exists(netns: Option<&str>, name: &str) -> Result<bool> {
     let mut command = Command::new(IP_PATH);
     if let Some(netns) = netns {
@@ -151,15 +161,16 @@ pub async fn bridge_exists(netns: Option<&str>, name: &str) -> Result<bool> {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct InterfaceShow {
-    ifindex: usize,
-    ifname: String,
-    mtu: Option<usize>,
-    operstate: String,
+    pub ifindex: usize,
+    pub ifname: String,
+    pub mtu: Option<usize>,
+    pub operstate: String,
 }
 
-pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool> {
+/// Get details of an interface.
+pub async fn interface_show(netns: Option<&str>, interface: &str) -> Result<InterfaceShow> {
     let mut command = Command::new(IP_PATH);
     command.arg("--json");
     if let Some(netns) = netns {
@@ -173,12 +184,19 @@ pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool
     let output = String::from_utf8(output.stdout)?;
     let items: Vec<InterfaceShow> = serde_json::from_str(&output)?;
     if items.len() == 1 {
-        Ok(items[0].operstate == "DOWN")
+        Ok(items[0].clone())
     } else {
         Err(anyhow!("Did not return any interfaces"))
     }
 }
 
+/// Check if an interface is down.
+pub async fn interface_down(netns: Option<&str>, interface: &str) -> Result<bool> {
+    let show = interface_show(netns, interface).await?;
+    Ok(show.operstate == "DOWN")
+}
+
+/// Set an interface to be up.
 pub async fn interface_set_up(netns: Option<&str>, interface: &str) -> Result<()> {
     info!("interface_up({:?}, {})", netns, interface);
     let mut command = Command::new(IP_PATH);
@@ -186,6 +204,25 @@ pub async fn interface_set_up(netns: Option<&str>, interface: &str) -> Result<()
         command.arg("-n").arg(netns);
     }
     command.arg("link").arg("set").arg(interface).arg("up");
+    if !command.status().await?.success() {
+        return Err(anyhow!("Error setting interface up"));
+    }
+    Ok(())
+}
+
+/// Sets an interface's MTU.
+pub async fn interface_mtu(netns: Option<&str>, interface: &str, mtu: usize) -> Result<()> {
+    info!("interface_mtu({:?}, {}, {})", netns, interface, mtu);
+    let mut command = Command::new(IP_PATH);
+    if let Some(netns) = netns {
+        command.arg("-n").arg(netns);
+    }
+    command
+        .arg("link")
+        .arg("set")
+        .arg(interface)
+        .arg("mtu")
+        .arg(mtu.to_string());
     if !command.status().await?.success() {
         return Err(anyhow!("Error setting interface up"));
     }
@@ -219,6 +256,7 @@ fn test_ip_addr() {
     );
 }
 
+/// Given an interface, list addresses.
 pub async fn addr_list(netns: Option<&str>, interface: &str) -> Result<Vec<IpNet>> {
     let mut command = Command::new(IP_PATH);
     command.arg("--json");
@@ -315,6 +353,7 @@ pub async fn link_set_master(netns: Option<&str>, interface: &str, master: &str)
     Ok(())
 }
 
+/// Create veth interface.
 pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
     info!("veth add {}, {}, {}", netns, outer, inner);
     if !Command::new(IP_PATH)
@@ -342,6 +381,7 @@ pub async fn veth_add(netns: &str, outer: &str, inner: &str) -> Result<()> {
     Ok(())
 }
 
+/// Check if a veth interface exists.
 pub async fn veth_exists(netns: &str, name: &str) -> Result<bool> {
     let output = Command::new(IP_PATH)
         .arg("-n")
@@ -360,6 +400,7 @@ pub async fn veth_exists(netns: &str, name: &str) -> Result<bool> {
     }
 }
 
+/// Create a wireguard interface.
 pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     info!("wireguard create {}, {}", netns, name);
     if !Command::new(IP_PATH)
@@ -390,6 +431,7 @@ pub async fn wireguard_create(netns: &str, name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Check if wireguard interface exists.
 pub async fn wireguard_exists(netns: &str, name: &str) -> Result<bool> {
     let output = Command::new(IP_PATH)
         .arg("-n")
@@ -408,6 +450,7 @@ pub async fn wireguard_exists(netns: &str, name: &str) -> Result<bool> {
     }
 }
 
+/// Sync the configuration state of a WireGuard interface with a given one.
 pub async fn wireguard_syncconf(netns: &str, name: &str) -> Result<()> {
     info!("wireguard syncconf {}, {}", netns, name);
     if !Command::new(IP_PATH)

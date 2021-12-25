@@ -2,6 +2,7 @@
     "12312": {
         "private_key": "2PGDeXYynfKqJH4k0sUgKeRKpL4DUGGLTKnPjKViZFk=",
         "address": ["10.0.0.1/16"],
+        "mtu": 1380,
         "peers": {
             "jNBIJrDn1EuvZFmdyTYxobc0lixvWqU3b9mBDKxtWRw=": {
                 "preshared_key": "4HtDIu03g/UVHHCsKXXRSj7rvA4DidAJ2ryqvCqeWWg=",
@@ -27,6 +28,7 @@
     "1234": {
         "private_key": "iKT73JBdaLwMuyK6WO0FhjPteYmMFvjjLOCslePlKXc=",
         "address": ["10.0.0.1/16"],
+        "mtu": 1420,
         "peers": {
             "VrPv8QmR39N1UAtnLyB+Jurx6vSUoi+o1l4uDQpP+WY=": {
                 "endpoint": "170.24.12.42:41213",
