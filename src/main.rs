@@ -157,7 +157,7 @@ async fn main() -> Result<()> {
         Command::Openapi => {
             let openapi = api::openapi_json();
             println!("{}", serde_json::to_string(&openapi)?);
-            Ok(());
+            Ok(())
         }
         Command::Migrate { database } => {
             let pool = SqlitePool::connect(&database).await?;
