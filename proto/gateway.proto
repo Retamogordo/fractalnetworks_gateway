@@ -13,7 +13,8 @@ enum IpVersion {
 // IP address with prefix
 message IpNet {
     IpVersion version = 1;
-    bytes data = 2;
+    uint32 prefix = 2;
+    bytes data = 3;
 }
 
 // IP address
