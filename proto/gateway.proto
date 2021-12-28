@@ -2,7 +2,7 @@ syntax = "proto3";
 package gateway;
 
 service Gateway {
-    rpc apply_config (ConfigRequest) returns (ConfigResponse);
+    rpc apply_config (GatewayConfig) returns (ConfigResponse);
 }
 
 enum IpVersion {
@@ -68,7 +68,7 @@ message NetworkConfig {
 }
 
 // Request to apply configuration
-message ConfigRequest {
+message GatewayConfig {
     map<uint32, NetworkConfig> networks = 1;
 }
 

@@ -64,3 +64,13 @@ impl From<std::net::SocketAddr> for SocketAddr {
         }
     }
 }
+
+impl TryInto<std::net::SocketAddr> for SocketAddr {
+    type Error = anyhow::Error;
+    fn try_into(self) -> Result<std::net::SocketAddr, Self::Error> {
+        let addr = self.addr.ok_or_else(|| anyhow::anyhow!("Missing address for SocketAddr"))?;
+        let addr: std::net::IpAddr = addr.try_into()?;
+        let port: u16 = self.port.try_into()?;
+        Ok(std::net::SocketAddr::new(addr, port))
+    }
+}
