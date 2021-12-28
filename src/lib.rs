@@ -13,6 +13,9 @@ use thiserror::Error;
 use url::Url;
 use wireguard_keys::{Privkey, Pubkey, Secret};
 
+#[cfg(feature = "proto")]
+pub mod proto;
+
 /// Possible errors that can happen when making a request to the gateway.
 #[derive(Error, Debug)]
 pub enum GatewayError {
