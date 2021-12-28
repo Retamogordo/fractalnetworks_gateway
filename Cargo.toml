@@ -31,11 +31,13 @@ wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys" }
 schemars = { git = "https://github.com/xfbs/schemars", optional = true }
 okapi = { version = "0.7.0-rc.1", optional = true }
 rocket_okapi = { version = "0.8.0-rc.1", optional = true }
+tonic = { version = "0.6", optional = true }
 
 [features]
 default = []
 schema = ["schemars", "gateway-client/schema"]
 openapi = ["okapi", "schema", "rocket_okapi"]
+grpc = ["gateway-client/proto", "tonic"]
 
 [patch.crates-io]
 schemars = { git = "https://github.com/xfbs/schemars", optional = true }

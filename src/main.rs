@@ -24,6 +24,8 @@
 mod api;
 mod garbage;
 mod gateway;
+#[cfg(feature = "grpc")]
+mod grpc;
 mod token;
 mod types;
 mod util;
@@ -47,6 +49,9 @@ pub enum Command {
     /// Generate OpenAPI documentation.
     #[cfg(feature = "openapi")]
     Openapi,
+    /// Run as gRPC service.
+    #[cfg(feature = "grpc")]
+    Grpc(Options),
     /// Migrate database.
     Migrate {
         /// What database file to use to log traffic data to.
@@ -159,6 +164,8 @@ async fn main() -> Result<()> {
             println!("{}", serde_json::to_string(&openapi)?);
             Ok(())
         }
+        #[cfg(feature = "grpc")]
+        Command::Grpc(options) => grpc::run(&options).await,
         Command::Migrate { database } => {
             let pool = SqlitePool::connect(&database).await?;
             sqlx::migrate!().run(&pool).await?;
