@@ -56,7 +56,6 @@ message PeerConfig {
     Secret preshared = 2;
     repeated IpNet allowed_ips = 3;
     optional SocketAddr endpoint = 4;
-
 }
 
 // Configuration for WireGuard network

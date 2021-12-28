@@ -130,3 +130,48 @@ impl TryInto<std::net::SocketAddr> for SocketAddr {
         Ok(std::net::SocketAddr::new(addr, port))
     }
 }
+
+impl From<crate::NetworkState> for NetworkConfig {
+    fn from(value: crate::NetworkState) -> NetworkConfig {
+        NetworkConfig {
+            address: value.address.into_iter().map(|a| a.into()).collect(),
+            // FIXME
+            forwarding: std::collections::HashMap::new(),
+            mtu: value.mtu as u32,
+            peers: value
+                .peers
+                .into_iter()
+                .map(|(pubkey, peer)| PeerConfig {
+                    allowed_ips: peer.allowed_ips.into_iter().map(|ip| ip.into()).collect(),
+                    endpoint: peer.endpoint.map(|e| e.into()),
+                    preshared: peer.preshared_key.map(|k| k.into()),
+                    pubkey: Some(pubkey.into()),
+                })
+                .collect(),
+            privkey: Some(value.private_key.into()),
+        }
+    }
+}
+
+impl TryInto<crate::NetworkState> for NetworkConfig {
+    type Error = anyhow::Error;
+    fn try_into(self) -> Result<crate::NetworkState, Self::Error> {
+        Ok(crate::NetworkState {
+            listen_port: 0,
+            mtu: self.mtu.try_into()?,
+            // FIXME
+            peers: std::collections::BTreeMap::new(),
+            private_key: self
+                .privkey
+                .ok_or_else(|| anyhow::anyhow!("Missing private key"))?
+                .try_into()?,
+            // FIXME
+            proxy: std::collections::HashMap::new(),
+            address: self
+                .address
+                .into_iter()
+                .map(|v| v.try_into())
+                .collect::<Result<Vec<_>, _>>()?,
+        })
+    }
+}
