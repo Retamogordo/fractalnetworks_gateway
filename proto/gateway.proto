@@ -2,13 +2,78 @@ syntax = "proto3";
 package gateway;
 
 service Gateway {
-    rpc apply_config (GatewayConfig) returns (GatewayResult);
+    rpc apply_config (ConfigRequest) returns (ConfigResponse);
 }
 
-message GatewayConfig {
-    string test = 1;
+enum IpVersion {
+    V4 = 0;
+    V6 = 1;
 }
 
-message GatewayResult {
-    string result = 1;
+// IP address with prefix
+message IpNet {
+    IpVersion version = 1;
+    bytes data = 2;
+}
+
+// IP address
+message IpAddr {
+    IpVersion version = 1;
+    bytes data = 2;
+}
+
+// Socket address, consists of IP and port
+message SocketAddr {
+    IpAddr addr = 1;
+    uint32 port = 2;
+}
+
+// WireGuard private key
+message Privkey {
+    bytes data = 1;
+}
+
+// WireGuard public key
+message Pubkey {
+    bytes data = 1;
+}
+
+// WireGuard preshared key
+message Secret {
+    bytes data = 1;
+}
+
+// Where to forward traffic to, can be multiple destinations
+// (round robin).
+message ForwardingTarget {
+    repeated SocketAddr targets = 1;
+}
+
+// Configuration for one peer in the network
+message PeerConfig {
+    Pubkey pubkey = 1;
+    Secret preshared = 2;
+    repeated IpNet allowed_ips = 3;
+    optional SocketAddr endpoint = 4;
+
+}
+
+// Configuration for WireGuard network
+message NetworkConfig {
+    Privkey privkey = 1;
+    uint32 mtu = 2;
+    repeated IpNet address = 3;
+    repeated PeerConfig peers = 4;
+    map<string, ForwardingTarget> forwarding = 5;
+}
+
+// Request to apply configuration
+message ConfigRequest {
+    map<uint32, NetworkConfig> networks = 1;
+}
+
+message ConfigResponse {
+    bool success = 1;
+    optional string error_kind = 2;
+    optional string error_mesg = 3;
 }
