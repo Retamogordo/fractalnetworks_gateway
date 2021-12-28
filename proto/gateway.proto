@@ -1,0 +1,14 @@
+syntax = "proto3";
+package gateway;
+
+service Gateway {
+    rpc apply_config (GatewayConfig) returns (GatewayResult);
+}
+
+message GatewayConfig {
+    string test = 1;
+}
+
+message GatewayResult {
+    string result = 1;
+}
