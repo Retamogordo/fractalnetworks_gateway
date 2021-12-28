@@ -175,3 +175,28 @@ impl TryInto<crate::NetworkState> for NetworkConfig {
         })
     }
 }
+
+impl From<crate::GatewayConfig> for GatewayConfig {
+    fn from(value: crate::GatewayConfig) -> GatewayConfig {
+        GatewayConfig {
+            networks: value
+                .0
+                .into_iter()
+                .map(|(port, network)| (port as u32, network.into()))
+                .collect(),
+        }
+    }
+}
+
+impl TryInto<crate::GatewayConfig> for GatewayConfig {
+    type Error = anyhow::Error;
+    fn try_into(self) -> Result<crate::GatewayConfig, Self::Error> {
+        use std::collections::BTreeMap;
+        let networks = self
+            .networks
+            .into_iter()
+            .map(|(port, network)| Ok((port.try_into()?, network.try_into()?)))
+            .collect::<Result<BTreeMap<_, _>, anyhow::Error>>()?;
+        Ok(crate::GatewayConfig(networks))
+    }
+}
