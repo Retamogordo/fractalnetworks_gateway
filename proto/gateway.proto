@@ -3,13 +3,13 @@ package gateway;
 
 service Gateway {
     // apply new configuration
-    rpc apply (ApplyRequest) returns (ApplyResponse);
+    rpc Apply (ApplyRequest) returns (ApplyResponse);
 
     // get stream of traffic data
-    rpc traffic (TrafficRequest) returns (stream TrafficResponse);
+    rpc Traffic (TrafficRequest) returns (stream TrafficResponse);
 
     // get stream of state changes (endpoint, connection state)
-    rpc state (StateRequest) returns (stream StateResponse);
+    rpc State (StateRequest) returns (stream StateResponse);
 }
 
 enum IpVersion {
