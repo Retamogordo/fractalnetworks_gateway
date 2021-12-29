@@ -80,7 +80,8 @@ message GatewayConfig {
 }
 
 message ApplyRequest {
-    GatewayConfig config = 1;
+    string token = 1;
+    GatewayConfig config = 2;
 }
 
 message ApplyResponse {
@@ -90,12 +91,14 @@ message ApplyResponse {
 }
 
 message TrafficRequest {
+    string token = 1;
 }
 
 message TrafficResponse {
 }
 
 message StateRequest {
+    string token = 1;
 }
 
 message StateResponse {
