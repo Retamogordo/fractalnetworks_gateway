@@ -659,7 +659,7 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#1bdfdb3fd02c105ecd0d64fb66be9401ef5f854f"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#b30a9d0e0bc91c9bcd7a0f9c91ee3fff34fbe5ed"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2873,9 +2873,9 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"
-version = "0.9.3"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
+checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "walkdir"
