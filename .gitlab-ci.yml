@@ -8,7 +8,7 @@ cache:
 stages:
   - test
   - build
-  - docker
+  - publish
   - deploy
 
 # make sure that formatting is correct.
@@ -113,7 +113,7 @@ docker:
   dependencies:
     - build:amd64
   image: docker
-  stage: docker
+  stage: publish
   services:
     - docker:dind
   script:
@@ -126,7 +126,7 @@ docker:
 # publish binary, docs and API docs to gitlab pages.
 pages:
   image: registry.gitlab.com/fractalnetworks/images/pages
-  stage: deploy
+  stage: publish
   dependencies:
     - build:amd64
     - build:arm32
