@@ -40,6 +40,7 @@ use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
 use tokio::fs::File;
+use tokio::sync::Mutex;
 use url::Url;
 
 #[derive(StructOpt, Clone, Debug)]
@@ -98,6 +99,26 @@ fn parse_custom_forwarding(text: &str) -> Result<(Url, SocketAddr)> {
     Ok((url, socket))
 }
 
+pub struct Global {
+    lock: Mutex<()>,
+    iptables_lock: Mutex<()>,
+    options: Options,
+}
+
+impl Global {
+    pub fn lock(&self) -> &Mutex<()> {
+        &self.lock
+    }
+
+    pub fn iptables_lock(&self) -> &Mutex<()> {
+        &self.iptables_lock
+    }
+
+    pub fn options(&self) -> &Options {
+        &self.options
+    }
+}
+
 impl Options {
     pub async fn run(self) -> Result<()> {
         // create database if not exists
@@ -109,6 +130,12 @@ impl Options {
         }
 
         let database_string = self.database.as_deref().unwrap_or_else(|| ":memory:");
+
+        let global = Global {
+            lock: Mutex::new(()),
+            iptables_lock: Mutex::new(()),
+            options: self.clone(),
+        };
 
         // connect and migrate database
         let pool = SqlitePool::connect(&database_string).await?;
@@ -144,6 +171,7 @@ impl Options {
             .mount("/api/v1", api::routes())
             .manage(Token::new(&self.secret))
             .manage(pool)
+            .manage(global)
             .manage(self.clone())
             .launch()
             .await?;

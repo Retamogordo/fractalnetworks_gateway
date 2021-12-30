@@ -1,5 +1,6 @@
 use crate::types::*;
 use crate::util::*;
+use crate::Global;
 use crate::Options;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
@@ -7,8 +8,10 @@ use gateway_client::{GatewayConfig, NetworkState, Traffic, TrafficInfo};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
+use regex::Regex;
 use rocket::futures::TryStreamExt;
 use sqlx::{query_as, SqlitePool};
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
@@ -42,6 +45,7 @@ lazy_static! {
         .unwrap();
         tera
     };
+    pub static ref IPTABLES_PACKET_COUNTER_REGEX: Regex = Regex::new(r"\[\d+:\d+\]$").unwrap();
 }
 
 /// Called on a fresh start, initialize NGINX config if needed.
@@ -59,7 +63,7 @@ pub async fn startup(options: &Options) -> Result<()> {
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
-pub async fn apply(config: &GatewayConfig, options: &Options) -> Result<String> {
+pub async fn apply(global: &Global, config: &GatewayConfig) -> Result<String> {
     info!("Applying new state");
 
     // turn config into list of network states
@@ -98,11 +102,14 @@ pub async fn apply(config: &GatewayConfig, options: &Options) -> Result<String> 
     }
 
     // for the rest, apply config
+    let mut apply_network_futures = vec![];
     for network in &state {
-        apply_network(network).await.context("Applying network")?;
+        apply_network_futures.push(apply_network(global, network));
     }
 
-    apply_nginx(&state, &options)
+    futures::future::try_join_all(apply_network_futures).await?;
+
+    apply_nginx(&state, global.options())
         .await
         .context("Applying nginx configuration")?;
 
@@ -128,10 +135,12 @@ pub async fn apply_bridge(_name: &str, addr: &[IpNet]) -> Result<()> {
 }
 
 /// Apply a given network state.
-pub async fn apply_network(network: &NetworkState) -> Result<()> {
+pub async fn apply_network(global: &Global, network: &NetworkState) -> Result<()> {
     apply_netns(network).await?;
     apply_wireguard(network).await?;
     apply_veth(network).await?;
+
+    let _lock = global.iptables_lock().lock().await;
     apply_forwarding(network).await?;
     Ok(())
 }
@@ -256,13 +265,34 @@ pub async fn apply_link_master(netns: Option<&str>, interface: &str, master: &st
     Ok(())
 }
 
+/// Clean iptables save file
+fn clean_iptables(input: &str) -> String {
+    let mut cleaned: String = input
+        .lines()
+        // filter comments
+        .filter(|line| line.chars().next() != Some('#'))
+        // filter empty lines
+        .filter(|line| line.chars().next() != None)
+        .map(|line| IPTABLES_PACKET_COUNTER_REGEX.replace(line, "[0:0]"))
+        .collect::<Vec<Cow<'_, str>>>()
+        .join("\n");
+    cleaned.push('\n');
+    cleaned
+}
+
 /// Apply the forwarding configuration by writing out an iptables state and restoring it.
 pub async fn apply_forwarding(network: &NetworkState) -> Result<()> {
     let netns = network.netns_name();
     let config = network.port_config();
     let context = tera::Context::from_serialize(&config)?;
     let savefile = TERA_TEMPLATES.render("iptables.save", &context)?;
-    iptables_restore(Some(&netns), &savefile).await?;
+    let savefile = clean_iptables(&savefile);
+    let current = iptables_save(Some(&netns)).await?;
+    let current = clean_iptables(&current);
+
+    if savefile != current {
+        iptables_restore(Some(&netns), &savefile).await?;
+    }
 
     Ok(())
 }

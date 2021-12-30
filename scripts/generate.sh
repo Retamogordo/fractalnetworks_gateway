@@ -1,6 +1,6 @@
 #!/bin/bash
 
-AMOUNT=10
+AMOUNT=500
 PORT_START=2000
 PEERS=3
 

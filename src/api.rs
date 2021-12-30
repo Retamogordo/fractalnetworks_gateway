@@ -1,4 +1,5 @@
 use crate::token::Token;
+use crate::Global;
 use crate::{gateway, Options};
 use gateway_client::{GatewayConfig, TrafficInfo};
 #[cfg(feature = "openapi")]
@@ -11,8 +12,9 @@ use sqlx::SqlitePool;
 
 #[cfg_attr(feature = "openapi", openapi)]
 #[post("/config.json", data = "<data>")]
-async fn config_set(_token: Token, data: Json<GatewayConfig>, options: &State<Options>) -> String {
-    gateway::apply(&data, &options).await.unwrap()
+async fn config_set(_token: Token, global: &State<Global>, data: Json<GatewayConfig>) -> String {
+    let _lock = global.lock().lock().await;
+    gateway::apply(global, &data).await.unwrap()
 }
 
 #[cfg_attr(feature = "openapi", openapi)]
