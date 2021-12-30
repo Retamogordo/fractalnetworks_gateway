@@ -6,7 +6,7 @@ use reqwest::Client;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::net::SocketAddr;
 use std::ops::{Add, AddAssign, Deref, DerefMut};
 use thiserror::Error;
@@ -67,7 +67,7 @@ pub struct NetworkState {
     /// Configuration state for peers in this network
     pub peers: BTreeMap<Pubkey, PeerState>,
     /// Forwarding settings for this network
-    pub proxy: HashMap<Url, Vec<SocketAddr>>,
+    pub proxy: BTreeMap<Url, Vec<SocketAddr>>,
 }
 
 /// Represents the configuration state of one particular peer of a WireGuard network.
