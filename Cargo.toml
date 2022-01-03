@@ -21,7 +21,7 @@ tonic = { version = "0.6", optional = true }
 prost = { version = "0.9", optional = true }
 
 [features]
-default = []
+default = ["proto"]
 api = ["reqwest"]
 schema = ["schemars", "wireguard-keys/schema"]
 cli = ["api", "structopt", "tokio/rt", "tokio/macros", "tokio/io-std", "tokio/fs", "serde_json"]
