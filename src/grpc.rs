@@ -1,3 +1,5 @@
+use crate::gateway;
+use crate::{Global, Options};
 use futures::Stream;
 use gateway_client::proto;
 use gateway_client::proto::gateway_server::{Gateway, GatewayServer};
@@ -5,13 +7,8 @@ use sqlx::SqlitePool;
 use std::pin::Pin;
 use tonic::{transport::Server, Request, Response, Status};
 
-pub struct Service {
-    options: crate::Options,
-    db: SqlitePool,
-}
-
 #[tonic::async_trait]
-impl Gateway for Service {
+impl Gateway for Global {
     async fn apply(
         &self,
         request: Request<proto::ApplyRequest>,
@@ -48,17 +45,14 @@ impl Gateway for Service {
     }
 }
 
-pub async fn run(options: &crate::Options) -> Result<(), anyhow::Error> {
-    let pool = SqlitePool::connect(&options.database.as_deref().unwrap()).await?;
-    sqlx::migrate!().run(&pool).await?;
-
-    let service = Service {
-        db: pool,
-        options: options.clone(),
-    };
+pub async fn run(options: &Options) -> Result<(), anyhow::Error> {
+    let global = options.global().await?;
+    global.watchdog().await;
+    global.garbage().await;
+    gateway::startup(&options).await?;
 
     Server::builder()
-        .add_service(GatewayServer::new(service))
+        .add_service(GatewayServer::new(global))
         .serve("0.0.0.0:9090".parse().unwrap())
         .await?;
 
