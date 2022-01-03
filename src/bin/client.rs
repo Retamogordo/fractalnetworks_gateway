@@ -126,8 +126,9 @@ impl Runnable for TrafficCommand {
                 }))
                 .await?;
             let mut response = response.into_inner();
-            while let Some(traffic) = response.next().await {
-                println!("{:?}", traffic);
+            while let Some(Ok(traffic)) = response.next().await {
+                let data: TrafficInfo = serde_json::from_str(&traffic.traffic)?;
+                println!("{}", serde_json::to_string(&data)?);
             }
             return Ok(());
         }
