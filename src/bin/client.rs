@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use gateway_client::{GatewayClient, GatewayConfig, TrafficInfo};
 use reqwest::{Client, ClientBuilder};
@@ -9,6 +9,10 @@ use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use url::Url;
+#[cfg(feature = "proto")]
+use gateway_client::proto::{ApplyRequest, gateway_client::{GatewayClient as GatewayGrpcClient}};
+#[cfg(feature = "proto")]
+use tonic::Request;
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct Options {
@@ -24,6 +28,9 @@ pub struct Options {
     /// Subcommand to run.
     #[structopt(subcommand)]
     command: Command,
+    #[cfg(feature = "proto")]
+    #[structopt(long, short)]
+    grpc: bool,
 }
 
 impl Options {
@@ -66,11 +73,22 @@ pub struct ConfigSetCommand {
 #[async_trait]
 impl Runnable for ConfigSetCommand {
     async fn run(self, options: &Options) -> Result<()> {
-        let client = options.client()?;
-        let mut file = File::open(&self.config).await?;
+        let mut file = File::open(&self.config).await.context("Opening configuration file")?;
         let mut contents = vec![];
-        file.read_to_end(&mut contents).await?;
-        let config = serde_json::from_slice(&contents)?;
+        file.read_to_end(&mut contents).await.context("Reading configuration file")?;
+        let config = serde_json::from_slice(&contents).context("Parsing configuration file JSON")?;
+
+        #[cfg(feature = "proto")]
+        if options.grpc {
+            let mut client = GatewayGrpcClient::connect(options.api.to_string()).await.context("Connecting to Gateway via gRPC")?;
+            let response = client.apply(Request::new(ApplyRequest {
+                token: options.token.clone(),
+                config: serde_json::to_string(&config)?,
+            })).await?;
+            return Ok(());
+        }
+
+        let client = options.client()?;
         options
             .api
             .config_set(&client, &options.token, &config)
@@ -94,6 +112,6 @@ async fn main() {
     let options = Options::from_args();
     match options.command.clone().run(&options).await {
         Ok(_) => {}
-        Err(e) => eprintln!("{}", e),
+        Err(e) => eprintln!("{:?}", e),
     }
 }
