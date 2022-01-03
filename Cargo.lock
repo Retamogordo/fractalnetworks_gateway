@@ -672,7 +672,7 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#583a3cef30a581aa53d824f60bcb081e04662fe1"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#b81f1d1241520ad1595e0759a477d435ede5527c"
 dependencies = [
  "anyhow",
  "async-trait",
