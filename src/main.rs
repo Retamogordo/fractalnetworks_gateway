@@ -102,6 +102,10 @@ pub struct Global {
     lock: Mutex<()>,
     iptables_lock: Mutex<()>,
     options: Options,
+    watchdog: Duration,
+    retention: Duration,
+    garbage: Duration,
+    database: SqlitePool,
 }
 
 impl Global {
@@ -116,10 +120,54 @@ impl Global {
     pub fn options(&self) -> &Options {
         &self.options
     }
+
+    /// launch watchdog, which after the interval will pull in traffic stats
+    /// and make sure that everything is running as it should.
+    pub async fn watchdog(&self) {
+        let database = self.database.clone();
+        let watchdog = self.watchdog.clone();
+        rocket::tokio::spawn(async move {
+            loop {
+                match watchdog::watchdog(&database, watchdog).await {
+                    Ok(_) => {}
+                    Err(e) => log::error!("{}", e),
+                }
+            }
+        });
+    }
+
+    /// launch garbage collector, which prunes old traffic stats from database
+    pub async fn garbage(&self) {
+        let database = self.database.clone();
+        let garbage = self.garbage.clone();
+        let retention = self.retention.clone();
+        rocket::tokio::spawn(async move {
+            loop {
+                match garbage::garbage(&database, garbage, retention).await {
+                    Ok(_) => {}
+                    Err(e) => log::error!("{}", e),
+                }
+            }
+        });
+    }
 }
 
 impl Options {
-    pub async fn run(self) -> Result<()> {
+    pub async fn global(&self) -> Result<Global> {
+        let global = Global {
+            lock: Mutex::new(()),
+            iptables_lock: Mutex::new(()),
+            options: self.clone(),
+            watchdog: self.watchdog,
+            retention: self.retention,
+            garbage: self.garbage,
+            database: self.database().await?,
+        };
+
+        Ok(global)
+    }
+
+    pub async fn database(&self) -> Result<SqlitePool> {
         // create database if not exists
         if let Some(database) = &self.database {
             let database = Path::new(&database);
@@ -130,46 +178,25 @@ impl Options {
 
         let database_string = self.database.as_deref().unwrap_or_else(|| ":memory:");
 
-        let global = Global {
-            lock: Mutex::new(()),
-            iptables_lock: Mutex::new(()),
-            options: self.clone(),
-        };
-
         // connect and migrate database
         let pool = SqlitePool::connect(&database_string).await?;
         sqlx::migrate!().run(&pool).await?;
 
-        // launch watchdog, which after the interval will pull in traffic stats
-        // and make sure that everything is running as it should.
-        let pool_clone = pool.clone();
-        rocket::tokio::spawn(async move {
-            loop {
-                match watchdog::watchdog(&pool_clone, self.watchdog).await {
-                    Ok(_) => {}
-                    Err(e) => log::error!("{}", e),
-                }
-            }
-        });
+        Ok(pool)
+    }
 
-        // launch garbage collector, which prunes old traffic stats from database
-        let pool_clone = pool.clone();
-        rocket::tokio::spawn(async move {
-            loop {
-                match garbage::garbage(&pool_clone, self.garbage, self.retention).await {
-                    Ok(_) => {}
-                    Err(e) => log::error!("{}", e),
-                }
-            }
-        });
+    pub async fn run(self) -> Result<()> {
+        let global = self.global().await?;
 
+        global.watchdog().await;
+        global.garbage().await;
         gateway::startup(&self).await?;
 
         // launch REST API
         rocket::build()
             .mount("/api/v1", api::routes())
             .manage(Token::new(&self.secret))
-            .manage(pool)
+            .manage(global.database.clone())
             .manage(global)
             .manage(self.clone())
             .launch()
