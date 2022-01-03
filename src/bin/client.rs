@@ -1,5 +1,10 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use futures::StreamExt;
+#[cfg(feature = "proto")]
+use gateway_client::proto::{
+    gateway_client::GatewayClient as GatewayGrpcClient, ApplyRequest, TrafficRequest,
+};
 use gateway_client::{GatewayClient, GatewayConfig, TrafficInfo};
 use reqwest::{Client, ClientBuilder};
 use serde_json::to_string_pretty;
@@ -8,11 +13,9 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use url::Url;
-#[cfg(feature = "proto")]
-use gateway_client::proto::{ApplyRequest, gateway_client::{GatewayClient as GatewayGrpcClient}};
 #[cfg(feature = "proto")]
 use tonic::Request;
+use url::Url;
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct Options {
@@ -73,18 +76,27 @@ pub struct ConfigSetCommand {
 #[async_trait]
 impl Runnable for ConfigSetCommand {
     async fn run(self, options: &Options) -> Result<()> {
-        let mut file = File::open(&self.config).await.context("Opening configuration file")?;
+        let mut file = File::open(&self.config)
+            .await
+            .context("Opening configuration file")?;
         let mut contents = vec![];
-        file.read_to_end(&mut contents).await.context("Reading configuration file")?;
-        let config = serde_json::from_slice(&contents).context("Parsing configuration file JSON")?;
+        file.read_to_end(&mut contents)
+            .await
+            .context("Reading configuration file")?;
+        let config =
+            serde_json::from_slice(&contents).context("Parsing configuration file JSON")?;
 
         #[cfg(feature = "proto")]
         if options.grpc {
-            let mut client = GatewayGrpcClient::connect(options.api.to_string()).await.context("Connecting to Gateway via gRPC")?;
-            let response = client.apply(Request::new(ApplyRequest {
-                token: options.token.clone(),
-                config: serde_json::to_string(&config)?,
-            })).await?;
+            let mut client = GatewayGrpcClient::connect(options.api.to_string())
+                .await
+                .context("Connecting to Gateway via gRPC")?;
+            let response = client
+                .apply(Request::new(ApplyRequest {
+                    token: options.token.clone(),
+                    config: serde_json::to_string(&config)?,
+                }))
+                .await?;
             return Ok(());
         }
 
@@ -103,6 +115,23 @@ pub struct TrafficCommand {}
 #[async_trait]
 impl Runnable for TrafficCommand {
     async fn run(self, options: &Options) -> Result<()> {
+        #[cfg(feature = "proto")]
+        if options.grpc {
+            let mut client = GatewayGrpcClient::connect(options.api.to_string())
+                .await
+                .context("Connecting to Gateway via gRPC")?;
+            let mut response = client
+                .traffic(Request::new(TrafficRequest {
+                    token: options.token.clone(),
+                }))
+                .await?;
+            let mut response = response.into_inner();
+            while let Some(traffic) = response.next().await {
+                println!("{:?}", traffic);
+            }
+            return Ok(());
+        }
+
         Ok(())
     }
 }

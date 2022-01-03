@@ -19,6 +19,7 @@ wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys" }
 schemars = { git = "https://github.com/xfbs/schemars", features = ["ipnet"], optional = true }
 tonic = { version = "0.6", optional = true }
 prost = { version = "0.9", optional = true }
+futures = "0.3.19"
 
 [features]
 default = ["proto"]
