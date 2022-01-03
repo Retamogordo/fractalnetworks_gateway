@@ -166,7 +166,7 @@ impl TryInto<crate::NetworkState> for NetworkConfig {
                 .ok_or_else(|| anyhow::anyhow!("Missing private key"))?
                 .try_into()?,
             // FIXME
-            proxy: std::collections::HashMap::new(),
+            proxy: std::collections::BTreeMap::new(),
             address: self
                 .address
                 .into_iter()
