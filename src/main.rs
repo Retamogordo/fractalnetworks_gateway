@@ -55,8 +55,7 @@ pub enum Command {
     Grpc(Options),
     /// Migrate database.
     Migrate {
-        /// What database file to use to log traffic data to.
-        #[structopt(long, short, env = "GATEWAY_DATABASE")]
+        /// Database to migrate.
         database: String,
     },
 }
