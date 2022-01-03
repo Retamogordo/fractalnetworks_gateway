@@ -1,6 +1,8 @@
 use crate::types::*;
 use crate::util::*;
+use crate::Global;
 use anyhow::{Context, Result};
+use gateway_client::TrafficInfo;
 use log::*;
 use sqlx::{query, query_as, SqlitePool};
 use std::time::Duration;
@@ -15,37 +17,39 @@ pub const TRAFFIC_MINIMUM: usize = 1024;
 
 /// Start watchdog process that repeatedly checks the state of the system, with
 /// a configurable interval.
-pub async fn watchdog(pool: &SqlitePool, duration: Duration) -> Result<()> {
-    info!("Launching watchdog every {}s", duration.as_secs());
-    let mut interval = tokio::time::interval(duration);
+pub async fn watchdog(global: &Global) -> Result<()> {
+    info!("Launching watchdog every {}s", global.watchdog.as_secs());
+    let mut interval = tokio::time::interval(global.watchdog);
     interval.tick().await;
     loop {
         interval.tick().await;
-        watchdog_run(&pool).await?;
+        watchdog_run(&global).await?;
     }
 }
 
-pub async fn watchdog_run(pool: &SqlitePool) -> Result<()> {
+pub async fn watchdog_run(global: &Global) -> Result<()> {
     info!("Running watchdog");
     let netns_items = netns_list().await.context("Listing network namespaces")?;
+    let mut traffic_info = TrafficInfo::new(0);
     for netns in &netns_items {
         if netns.name.starts_with(NETNS_PREFIX) {
-            match watchdog_netns(pool, &netns.name).await {
+            match watchdog_netns(global, &netns.name).await {
                 Ok(_) => {}
                 Err(e) => error!("Error in watchdog_netns: {:?}", e),
             }
         }
     }
+    global.traffic.send(traffic_info)?;
     Ok(())
 }
 
-pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
+pub async fn watchdog_netns(global: &Global, netns: &str) -> Result<()> {
     let wgif = format!("wg{}", &netns[8..]);
     let stats = wireguard_stats(&netns, &wgif)
         .await
         .context("Fetching wireguard stats")?;
     for peer in stats.peers() {
-        match watchdog_peer(pool, &stats, &peer).await {
+        match watchdog_peer(global, &stats, &peer).await {
             Ok(_) => {}
             Err(e) => error!("Error in watchdog_peer: {:?}", e),
         }
@@ -53,25 +57,22 @@ pub async fn watchdog_netns(pool: &SqlitePool, netns: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn watchdog_peer(
-    pool: &SqlitePool,
-    stats: &NetworkStats,
-    peer: &PeerStats,
-) -> Result<()> {
+pub async fn watchdog_peer(global: &Global, stats: &NetworkStats, peer: &PeerStats) -> Result<()> {
+    let mut conn = global.database.acquire().await?;
     // insert network pubkey
     query(
         "INSERT OR IGNORE INTO gateway_network(network_pubkey)
             VALUES (?)",
     )
     .bind(&stats.public_key[..])
-    .execute(pool)
+    .execute(&mut conn)
     .await?;
     let network_id: (i64,) = query_as(
         "SELECT network_id FROM gateway_network
             WHERE network_pubkey = ?",
     )
     .bind(&stats.public_key[..])
-    .fetch_one(pool)
+    .fetch_one(&mut conn)
     .await
     .context("Looking up network_id")?;
     let network_id = network_id.0;
@@ -81,14 +82,14 @@ pub async fn watchdog_peer(
             VALUES (?)",
     )
     .bind(&peer.public_key[..])
-    .execute(pool)
+    .execute(&mut conn)
     .await?;
     let device_id: (i64,) = query_as(
         "SELECT device_id FROM gateway_device
             WHERE device_pubkey = ?",
     )
     .bind(&peer.public_key[..])
-    .fetch_one(pool)
+    .fetch_one(&mut conn)
     .await
     .context("Looking up device_id")?;
     let device_id = device_id.0;
@@ -100,7 +101,7 @@ pub async fn watchdog_peer(
     )
     .bind(network_id)
     .bind(device_id)
-    .fetch_optional(pool)
+    .fetch_optional(&mut conn)
     .await?;
 
     // find out how much traffic has occured since last watchdog run
@@ -142,7 +143,7 @@ pub async fn watchdog_peer(
     .bind(peer.transfer_rx as i64)
     .bind(traffic_tx as i64)
     .bind(peer.transfer_tx as i64)
-    .execute(pool)
+    .execute(&mut conn)
     .await?;
     Ok(())
 }

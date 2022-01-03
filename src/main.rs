@@ -32,14 +32,17 @@ mod util;
 mod watchdog;
 
 use anyhow::{anyhow, Context, Result};
+use gateway_client::TrafficInfo;
 use sqlx::SqlitePool;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 use structopt::StructOpt;
 use token::Token;
 use tokio::fs::File;
+use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
 use url::Url;
 
@@ -98,14 +101,16 @@ fn parse_custom_forwarding(text: &str) -> Result<(Url, SocketAddr)> {
     Ok((url, socket))
 }
 
+#[derive(Clone)]
 pub struct Global {
-    lock: Mutex<()>,
-    iptables_lock: Mutex<()>,
+    lock: Arc<Mutex<()>>,
+    iptables_lock: Arc<Mutex<()>>,
     options: Options,
     watchdog: Duration,
     retention: Duration,
     garbage: Duration,
     database: SqlitePool,
+    traffic: Sender<TrafficInfo>,
 }
 
 impl Global {
@@ -124,11 +129,10 @@ impl Global {
     /// launch watchdog, which after the interval will pull in traffic stats
     /// and make sure that everything is running as it should.
     pub async fn watchdog(&self) {
-        let database = self.database.clone();
-        let watchdog = self.watchdog.clone();
+        let global = self.clone();
         rocket::tokio::spawn(async move {
             loop {
-                match watchdog::watchdog(&database, watchdog).await {
+                match watchdog::watchdog(&global).await {
                     Ok(_) => {}
                     Err(e) => log::error!("{}", e),
                 }
@@ -154,14 +158,16 @@ impl Global {
 
 impl Options {
     pub async fn global(&self) -> Result<Global> {
+        let (sender, _) = channel(16);
         let global = Global {
-            lock: Mutex::new(()),
-            iptables_lock: Mutex::new(()),
+            lock: Arc::new(Mutex::new(())),
+            iptables_lock: Arc::new(Mutex::new(())),
             options: self.clone(),
             watchdog: self.watchdog,
             retention: self.retention,
             garbage: self.garbage,
             database: self.database().await?,
+            traffic: sender,
         };
 
         Ok(global)

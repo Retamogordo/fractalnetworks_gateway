@@ -1,11 +1,13 @@
 use crate::gateway;
 use crate::{Global, Options};
 use futures::Stream;
+use futures::StreamExt;
 use gateway_client::proto;
 use gateway_client::proto::gateway_server::{Gateway, GatewayServer};
 use gateway_client::GatewayConfig;
 use sqlx::SqlitePool;
 use std::pin::Pin;
+use tokio_stream::wrappers::BroadcastStream;
 use tonic::{transport::Server, Request, Response, Status};
 
 impl Global {
@@ -49,7 +51,16 @@ impl Gateway for Global {
     ) -> Result<Response<Self::TrafficStream>, Status> {
         let traffic_request = request.into_inner();
         self.check_token(&traffic_request.token)?;
-        unimplemented!()
+        let receiver = self.traffic.subscribe();
+        let stream = BroadcastStream::new(receiver).filter_map(|traffic| async move {
+            match traffic {
+                Ok(traffic) => Some(Ok(proto::TrafficResponse {
+                    traffic: serde_json::to_string(&traffic).unwrap(),
+                })),
+                Err(_) => None,
+            }
+        });
+        Ok(Response::new(Box::pin(stream)))
     }
 
     type StateStream = Pin<Box<dyn Stream<Item = Result<proto::StateResponse, Status>> + Send>>;

@@ -663,6 +663,7 @@ dependencies = [
  "tera",
  "thiserror",
  "tokio",
+ "tokio-stream",
  "tonic",
  "url",
  "wireguard-keys",
@@ -2558,6 +2559,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]
