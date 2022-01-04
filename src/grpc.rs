@@ -63,12 +63,12 @@ impl Gateway for Global {
         Ok(Response::new(Box::pin(stream)))
     }
 
-    type StateStream = Pin<Box<dyn Stream<Item = Result<proto::StateResponse, Status>> + Send>>;
+    type EventsStream = Pin<Box<dyn Stream<Item = Result<proto::EventsResponse, Status>> + Send>>;
 
-    async fn state(
+    async fn events(
         &self,
-        request: Request<proto::StateRequest>,
-    ) -> Result<Response<Self::StateStream>, Status> {
+        request: Request<proto::EventsRequest>,
+    ) -> Result<Response<Self::EventsStream>, Status> {
         let state_request = request.into_inner();
         self.check_token(&state_request.token)?;
         unimplemented!()
