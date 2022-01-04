@@ -9,7 +9,7 @@ service Gateway {
     rpc Traffic (TrafficRequest) returns (stream TrafficResponse);
 
     // get stream of state changes (endpoint, connection state)
-    rpc State (StateRequest) returns (stream StateResponse);
+    rpc Events (EventsRequest) returns (stream EventsResponse);
 }
 
 message ApplyRequest {
@@ -31,10 +31,10 @@ message TrafficResponse {
     string traffic = 1;
 }
 
-message StateRequest {
+message EventsRequest {
     string token = 1;
 }
 
-message StateResponse {
+message EventsResponse {
     string event = 1;
 }
