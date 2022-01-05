@@ -32,6 +32,7 @@ mod util;
 mod watchdog;
 
 use anyhow::{anyhow, Context, Result};
+use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector, GatewayEvent};
 use gateway_client::TrafficInfo;
 use sqlx::SqlitePool;
 use std::net::SocketAddr;
@@ -46,6 +47,13 @@ use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
 use url::Url;
 
+/// Broadcast queue length for traffic data.
+const BROADCAST_QUEUE_TRAFFIC: usize = 16;
+
+/// Broadcast queue length for events.
+const BROADCAST_QUEUE_EVENTS: usize = 16;
+
+/// Command-line options for gateway.
 #[derive(StructOpt, Clone, Debug)]
 pub enum Command {
     /// Run gateway.
@@ -63,6 +71,7 @@ pub enum Command {
     },
 }
 
+/// Command-line options for running gateway (either as REST or a gRPC service).
 #[derive(StructOpt, Clone, Debug)]
 pub struct Options {
     /// What database file to use to log traffic data to.
@@ -101,21 +110,48 @@ fn parse_custom_forwarding(text: &str) -> Result<(Url, SocketAddr)> {
     Ok((url, socket))
 }
 
+/// Global state.
+///
+/// This struct is made available to all parts of the gateway.
 #[derive(Clone)]
 pub struct Global {
+    /// Config application lock.
+    ///
+    /// This lock is held while a new configuration is being applied.
     lock: Arc<Mutex<()>>,
+    /// IPtables application lock.
+    ///
+    /// IPtables rules cannot be applied simultaneously.
     iptables_lock: Arc<Mutex<()>>,
+    /// Command-line options.
     options: Options,
+    /// Watchdog duration.
+    ///
+    /// The watchdog process runs on intervals and polls wireguard traffic and peer
+    /// statistics and turns them into events.
     watchdog: Duration,
+    /// Traffic data retention.
     retention: Duration,
     garbage: Duration,
+    /// Connection to the database.
+    ///
+    /// The database is used only to store traffic data.
     database: SqlitePool,
+    /// Broadcast queue for sending traffic data.
     traffic: Sender<TrafficInfo>,
+    /// Events stream for gateway. These events are sent out on the gRPC socket.
+    events: EventCollector<GatewayEvent>,
+    /// Underlying channel that events are sent on.
+    events_channel: Sender<GatewayEvent>,
 }
 
 impl Global {
     pub fn lock(&self) -> &Mutex<()> {
         &self.lock
+    }
+
+    pub async fn event(&self, event: &GatewayEvent) -> Result<()> {
+        self.events.event(event).await
     }
 
     pub fn iptables_lock(&self) -> &Mutex<()> {
@@ -158,7 +194,10 @@ impl Global {
 
 impl Options {
     pub async fn global(&self) -> Result<Global> {
-        let (sender, _) = channel(16);
+        let (traffic, _) = channel(BROADCAST_QUEUE_TRAFFIC);
+        let (events_channel, _) = channel(BROADCAST_QUEUE_TRAFFIC);
+        let mut events = EventCollector::new();
+        events.emitter(BroadcastEmitter::new(events_channel.clone()));
         let global = Global {
             lock: Arc::new(Mutex::new(())),
             iptables_lock: Arc::new(Mutex::new(())),
@@ -167,7 +206,9 @@ impl Options {
             retention: self.retention,
             garbage: self.garbage,
             database: self.database().await?,
-            traffic: sender,
+            traffic,
+            events,
+            events_channel,
         };
 
         Ok(global)

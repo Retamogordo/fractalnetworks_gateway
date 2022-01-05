@@ -71,7 +71,16 @@ impl Gateway for Global {
     ) -> Result<Response<Self::EventsStream>, Status> {
         let state_request = request.into_inner();
         self.check_token(&state_request.token)?;
-        unimplemented!()
+        let subscription = self.events_channel.subscribe();
+        let stream = BroadcastStream::new(subscription).filter_map(|event| async move {
+            match event {
+                Ok(event) => Some(Ok(proto::EventsResponse {
+                    event: serde_json::to_string(&event).unwrap(),
+                })),
+                Err(_) => None,
+            }
+        });
+        Ok(Response::new(Box::pin(stream)))
     }
 }
 

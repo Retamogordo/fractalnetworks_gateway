@@ -2,11 +2,14 @@ use crate::types::*;
 use crate::util::*;
 use crate::Global;
 use anyhow::{Context, Result};
+use event_types::{GatewayEvent, GatewayPeerConnectedEvent};
 use gateway_client::TrafficInfo;
 use log::*;
 use sqlx::{query, query_as, SqlitePool};
+use std::net::SocketAddr;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
+use wireguard_keys::Privkey;
 
 /// Minimum amount of traffic to be recorded. This exists because we don't
 /// need to store a traffic entry if no traffic has occured. But because of
@@ -40,6 +43,13 @@ pub async fn watchdog_run(global: &Global) -> Result<()> {
         }
     }
     global.traffic.send(traffic_info)?;
+    global
+        .event(&GatewayEvent::PeerConnected(GatewayPeerConnectedEvent {
+            endpoint: "127.0.0.1:9000".parse().unwrap(),
+            network: Privkey::generate().pubkey(),
+            peer: Privkey::generate().pubkey(),
+        }))
+        .await?;
     Ok(())
 }
 
