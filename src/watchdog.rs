@@ -24,19 +24,20 @@ pub async fn watchdog(global: &Global) -> Result<()> {
     info!("Launching watchdog every {}s", global.watchdog.as_secs());
     let mut interval = tokio::time::interval(global.watchdog);
     interval.tick().await;
+    let mut traffic = TrafficInfo::new(0);
     loop {
         interval.tick().await;
-        watchdog_run(&global).await?;
+        watchdog_run(&global, &mut traffic).await?;
     }
 }
 
-pub async fn watchdog_run(global: &Global) -> Result<()> {
+pub async fn watchdog_run(global: &Global, traffic_prev: &mut TrafficInfo) -> Result<()> {
     info!("Running watchdog");
     let netns_items = netns_list().await.context("Listing network namespaces")?;
     let mut traffic_info = TrafficInfo::new(0);
     for netns in &netns_items {
         if netns.name.starts_with(NETNS_PREFIX) {
-            match watchdog_netns(global, &netns.name).await {
+            match watchdog_netns(global, &mut traffic_info, traffic_prev, &netns.name).await {
                 Ok(_) => {}
                 Err(e) => error!("Error in watchdog_netns: {:?}", e),
             }
@@ -53,13 +54,18 @@ pub async fn watchdog_run(global: &Global) -> Result<()> {
     Ok(())
 }
 
-pub async fn watchdog_netns(global: &Global, netns: &str) -> Result<()> {
+pub async fn watchdog_netns(
+    global: &Global,
+    traffic: &mut TrafficInfo,
+    prev: &mut TrafficInfo,
+    netns: &str,
+) -> Result<()> {
     let wgif = format!("wg{}", &netns[8..]);
     let stats = wireguard_stats(&netns, &wgif)
         .await
         .context("Fetching wireguard stats")?;
     for peer in stats.peers() {
-        match watchdog_peer(global, &stats, &peer).await {
+        match watchdog_peer(global, traffic, prev, &stats, &peer).await {
             Ok(_) => {}
             Err(e) => error!("Error in watchdog_peer: {:?}", e),
         }
@@ -67,7 +73,13 @@ pub async fn watchdog_netns(global: &Global, netns: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn watchdog_peer(global: &Global, stats: &NetworkStats, peer: &PeerStats) -> Result<()> {
+pub async fn watchdog_peer(
+    global: &Global,
+    traffic: &mut TrafficInfo,
+    prev: &mut TrafficInfo,
+    stats: &NetworkStats,
+    peer: &PeerStats,
+) -> Result<()> {
     let mut conn = global.database.acquire().await?;
     // insert network pubkey
     query(
