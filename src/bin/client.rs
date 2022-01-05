@@ -124,7 +124,7 @@ impl Runnable for TrafficCommand {
             let mut client = GatewayGrpcClient::connect(options.api.to_string())
                 .await
                 .context("Connecting to Gateway via gRPC")?;
-            let mut response = client
+            let response = client
                 .traffic(Request::new(TrafficRequest {
                     token: options.token.clone(),
                 }))
