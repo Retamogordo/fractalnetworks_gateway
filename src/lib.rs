@@ -129,13 +129,13 @@ impl Traffic {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TrafficInfo {
     /// Stat of time slice, as UNIX timestamp
-    start_time: usize,
+    pub start_time: usize,
     /// End of time slice, as UNIX timestamp
-    stop_time: usize,
+    pub stop_time: usize,
     /// Sum of all traffic occuring in this time slice.
-    traffic: Traffic,
+    pub traffic: Traffic,
     /// Traffic by network
-    networks: BTreeMap<Pubkey, NetworkTraffic>,
+    pub networks: BTreeMap<Pubkey, NetworkTraffic>,
 }
 
 impl TrafficInfo {
@@ -164,9 +164,9 @@ impl TrafficInfo {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct NetworkTraffic {
     /// Total traffic occuring in this network.
-    traffic: Traffic,
+    pub traffic: Traffic,
     /// Traffic per device.
-    devices: BTreeMap<Pubkey, DeviceTraffic>,
+    pub devices: BTreeMap<Pubkey, DeviceTraffic>,
 }
 
 impl NetworkTraffic {
@@ -185,9 +185,9 @@ impl NetworkTraffic {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DeviceTraffic {
     /// Total traffic from this peer
-    traffic: Traffic,
+    pub traffic: Traffic,
     /// Map of timestamps and traffic generated
-    times: BTreeMap<usize, Traffic>,
+    pub times: BTreeMap<usize, Traffic>,
 }
 
 impl DeviceTraffic {
