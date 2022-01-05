@@ -502,7 +502,7 @@ dependencies = [
 [[package]]
 name = "event-types"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/event-types#49c975e6a012e7c5734be17625625bf51dc157fa"
+source = "git+https://gitlab.com/fractalnetworks/event-types#0b5580822ebd17c1e39b99bf7f5b11bd1cb8cfab"
 dependencies = [
  "anyhow",
  "async-trait",

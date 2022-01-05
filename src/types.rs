@@ -128,6 +128,7 @@ impl PeerStateExt for PeerState {
         if let Some(endpoint) = self.endpoint {
             writeln!(config, "Endpoint = {}", endpoint).unwrap();
         }
+        writeln!(config, "PersistentKeepalive = 25").unwrap();
         config
     }
 }
@@ -261,13 +262,13 @@ impl NetworkStats {
 #[derive(Clone, Debug)]
 pub struct PeerStats {
     pub public_key: Pubkey,
-    preshared_key: Option<Secret>,
-    endpoint: Option<SocketAddr>,
-    allowed_ips: Vec<IpNet>,
-    latest_handshake: Option<SystemTime>,
+    pub preshared_key: Option<Secret>,
+    pub endpoint: Option<SocketAddr>,
+    pub allowed_ips: Vec<IpNet>,
+    pub latest_handshake: Option<SystemTime>,
     pub transfer_rx: usize,
     pub transfer_tx: usize,
-    persistent_keepalive: Option<usize>,
+    pub persistent_keepalive: Option<usize>,
 }
 
 impl FromStr for PeerStats {

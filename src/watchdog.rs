@@ -2,7 +2,9 @@ use crate::types::*;
 use crate::util::*;
 use crate::Global;
 use anyhow::{Context, Result};
-use event_types::{GatewayEvent, GatewayPeerConnectedEvent};
+use event_types::{
+    GatewayEvent, GatewayPeerConnectedEvent, GatewayPeerDisconnectedEvent, GatewayPeerEndpointEvent,
+};
 use gateway_client::{Traffic, TrafficInfo};
 use log::*;
 use sqlx::{query, query_as, SqlitePool};
@@ -19,6 +21,8 @@ use wireguard_keys::{Privkey, Pubkey};
 /// it. The traffic will still accumulate, so no information is lost.
 pub const TRAFFIC_MINIMUM: usize = 1024;
 
+pub const WIREGUARD_HANDSHAKE_TIMEOUT: u64 = 3 * 60;
+
 type PeerCache = BTreeMap<u16, BTreeMap<Pubkey, PeerStats>>;
 
 /// Start watchdog process that repeatedly checks the state of the system, with
@@ -26,7 +30,6 @@ type PeerCache = BTreeMap<u16, BTreeMap<Pubkey, PeerStats>>;
 pub async fn watchdog(global: &Global) -> Result<()> {
     info!("Launching watchdog every {}s", global.watchdog.as_secs());
     let mut interval = tokio::time::interval(global.watchdog);
-    interval.tick().await;
     let mut peer_cache = PeerCache::new();
     loop {
         interval.tick().await;
@@ -46,14 +49,7 @@ pub async fn watchdog_run(global: &Global, cache: &mut PeerCache) -> Result<()> 
             }
         }
     }
-    global.traffic.send(traffic)?;
-    global
-        .event(&GatewayEvent::PeerConnected(GatewayPeerConnectedEvent {
-            endpoint: "127.0.0.1:9000".parse().unwrap(),
-            network: Privkey::generate().pubkey(),
-            peer: Privkey::generate().pubkey(),
-        }))
-        .await?;
+    global.traffic.send(traffic);
     Ok(())
 }
 
@@ -95,6 +91,14 @@ pub async fn watchdog_netns(
     // remove dead peers from cache
     for peer in dead_peers {
         entry.remove(&peer);
+        global
+            .event(&GatewayEvent::PeerDisconnected(
+                GatewayPeerDisconnectedEvent {
+                    network: stats.public_key,
+                    peer: peer,
+                },
+            ))
+            .await?;
     }
 
     Ok(())
@@ -107,6 +111,19 @@ pub async fn watchdog_peer(
     stats: &NetworkStats,
     peer: &PeerStats,
 ) -> Result<()> {
+    // set latest_timeout to none if it is too long ago
+    let mut peer = peer.clone();
+    if let Some(handshake) = peer.latest_handshake {
+        let duration = SystemTime::now().duration_since(handshake);
+        if let Ok(duration) = duration {
+            if duration.as_secs() > WIREGUARD_HANDSHAKE_TIMEOUT {
+                peer.latest_handshake = None;
+            }
+        } else {
+            peer.latest_handshake = None;
+        }
+    }
+
     if let Some(previous) = cache.get(&peer.public_key) {
         let time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
@@ -130,9 +147,53 @@ pub async fn watchdog_peer(
                 traffic.add(stats.public_key, peer.public_key, time, traffic_item);
             }
         }
+
+        if peer.endpoint != previous.endpoint {
+            if let Some(endpoint) = peer.endpoint {
+                global
+                    .event(&GatewayEvent::PeerEndpoint(GatewayPeerEndpointEvent {
+                        endpoint: endpoint,
+                        network: stats.public_key,
+                        peer: peer.public_key,
+                    }))
+                    .await?;
+            }
+        }
+
+        match (previous.latest_handshake, peer.latest_handshake) {
+            (Some(_), None) => {
+                global
+                    .event(&GatewayEvent::PeerDisconnected(
+                        GatewayPeerDisconnectedEvent {
+                            network: stats.public_key,
+                            peer: peer.public_key,
+                        },
+                    ))
+                    .await?;
+            }
+            (None, Some(_)) => {
+                global
+                    .event(&GatewayEvent::PeerConnected(GatewayPeerConnectedEvent {
+                        endpoint: peer.endpoint.unwrap(),
+                        network: stats.public_key,
+                        peer: peer.public_key,
+                    }))
+                    .await?;
+            }
+            _ => {}
+        }
     } else {
+        if peer.latest_handshake.is_some() {
+            global
+                .event(&GatewayEvent::PeerConnected(GatewayPeerConnectedEvent {
+                    endpoint: peer.endpoint.unwrap(),
+                    network: stats.public_key,
+                    peer: peer.public_key,
+                }))
+                .await?;
+        }
     }
 
-    cache.insert(peer.public_key, peer.clone());
+    cache.insert(peer.public_key, peer);
     Ok(())
 }
