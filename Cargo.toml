@@ -20,6 +20,7 @@ schemars = { git = "https://github.com/xfbs/schemars", features = ["ipnet"], opt
 tonic = { version = "0.6", optional = true }
 prost = { version = "0.9", optional = true }
 futures = "0.3.19"
+event-types = { git = "https://gitlab.com/fractalnetworks/event-types" }
 
 [features]
 default = ["proto"]

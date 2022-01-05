@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use event_types::GatewayEvent;
 use futures::StreamExt;
 #[cfg(feature = "proto")]
 use gateway_client::proto::{
-    gateway_client::GatewayClient as GatewayGrpcClient, ApplyRequest, TrafficRequest,
+    gateway_client::GatewayClient as GatewayGrpcClient, ApplyRequest, EventsRequest, TrafficRequest,
 };
 use gateway_client::{GatewayClient, GatewayConfig, TrafficInfo};
 use reqwest::{Client, ClientBuilder};
@@ -51,10 +52,12 @@ trait Runnable {
 
 #[derive(StructOpt, Debug, Clone)]
 pub enum Command {
-    /// Manage gateways connected to this manager.
+    /// Set a configuration to be applied on the gateway
     ConfigSet(ConfigSetCommand),
-    /// Commands related to managing networks.
+    /// Get a stream of traffic data from gateway.
     Traffic(TrafficCommand),
+    /// Get a stream of events from gateway.
+    Events(EventsCommand),
 }
 
 #[async_trait]
@@ -64,6 +67,7 @@ impl Runnable for Command {
         match self {
             ConfigSet(command) => command.run(options).await,
             Traffic(command) => command.run(options).await,
+            Events(command) => command.run(options).await,
         }
     }
 }
@@ -137,11 +141,39 @@ impl Runnable for TrafficCommand {
     }
 }
 
+#[derive(StructOpt, Debug, Clone)]
+pub struct EventsCommand {}
+
+#[async_trait]
+impl Runnable for EventsCommand {
+    async fn run(self, options: &Options) -> Result<()> {
+        #[cfg(feature = "proto")]
+        if options.grpc {
+            let mut client = GatewayGrpcClient::connect(options.api.to_string())
+                .await
+                .context("Connecting to Gateway via gRPC")?;
+            let mut response = client
+                .events(Request::new(EventsRequest {
+                    token: options.token.clone(),
+                }))
+                .await?;
+            let mut response = response.into_inner();
+            while let Some(Ok(event)) = response.next().await {
+                let data: GatewayEvent = serde_json::from_str(&event.event)?;
+                println!("{}", serde_json::to_string(&data)?);
+            }
+            return Ok(());
+        }
+
+        Ok(())
+    }
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let options = Options::from_args();
     match options.command.clone().run(&options).await {
         Ok(_) => {}
-        Err(e) => eprintln!("{:?}", e),
+        Err(e) => eprintln!("Error: {:?}", e),
     }
 }
