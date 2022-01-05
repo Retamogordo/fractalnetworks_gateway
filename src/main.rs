@@ -195,7 +195,7 @@ impl Global {
 impl Options {
     pub async fn global(&self) -> Result<Global> {
         let (traffic, _) = channel(BROADCAST_QUEUE_TRAFFIC);
-        let (events_channel, _) = channel(BROADCAST_QUEUE_TRAFFIC);
+        let (events_channel, _) = channel(BROADCAST_QUEUE_EVENTS);
         let mut events = EventCollector::new();
         events.emitter(BroadcastEmitter::new(events_channel.clone()));
         let global = Global {

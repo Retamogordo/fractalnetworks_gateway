@@ -9,6 +9,7 @@ use rocket::serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use url::Url;
 use wireguard_keys::{Privkey, Pubkey, Secret};
 
@@ -263,7 +264,7 @@ pub struct PeerStats {
     preshared_key: Option<Secret>,
     endpoint: Option<SocketAddr>,
     allowed_ips: Vec<IpNet>,
-    latest_handshake: usize,
+    latest_handshake: Option<SystemTime>,
     pub transfer_rx: usize,
     pub transfer_tx: usize,
     persistent_keepalive: Option<usize>,
@@ -297,7 +298,18 @@ impl FromStr for PeerStats {
                     .collect::<Result<Vec<_>, _>>()
                     .context("Parsing IpNet")?
             },
-            latest_handshake: components[4].parse()?,
+            latest_handshake: {
+                let timestamp: u64 = components[4].parse()?;
+                if timestamp > 0 {
+                    Some(
+                        UNIX_EPOCH
+                            .checked_add(Duration::from_secs(timestamp))
+                            .ok_or(anyhow!("Error parsing latest handshake time"))?,
+                    )
+                } else {
+                    None
+                }
+            },
             transfer_rx: components[5].parse()?,
             transfer_tx: components[6].parse()?,
             persistent_keepalive: if components[7] == "off" {
