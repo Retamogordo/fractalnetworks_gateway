@@ -502,7 +502,7 @@ dependencies = [
 [[package]]
 name = "event-types"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/event-types#a5c823424d684921b4a36c8b0901b27af882ad59"
+source = "git+https://gitlab.com/fractalnetworks/event-types#49c975e6a012e7c5734be17625625bf51dc157fa"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -711,10 +711,11 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#f15dae64ef15981062348c2b3e0d70516f8ba362"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#f6ea9f58e19bdfb95d9f73fd5908a2b178e50e06"
 dependencies = [
  "anyhow",
  "async-trait",
+ "event-types",
  "futures",
  "ipnet",
  "log",
