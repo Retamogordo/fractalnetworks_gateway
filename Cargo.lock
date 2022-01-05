@@ -711,11 +711,10 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#f6ea9f58e19bdfb95d9f73fd5908a2b178e50e06"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#b7af5c1cc1dd8a0e73ae3c2beb42efa2ae9956ad"
 dependencies = [
  "anyhow",
  "async-trait",
- "event-types",
  "futures",
  "ipnet",
  "log",

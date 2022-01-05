@@ -216,7 +216,7 @@ impl Forwarding {
 pub struct NetworkStats {
     private_key: Privkey,
     pub public_key: Pubkey,
-    listen_port: u16,
+    pub listen_port: u16,
     fwmark: Option<u16>,
     peers: Vec<PeerStats>,
 }
@@ -250,6 +250,10 @@ impl FromStr for NetworkStats {
 impl NetworkStats {
     pub fn peers(&self) -> &[PeerStats] {
         &self.peers
+    }
+
+    pub fn listen_port(&self) -> u16 {
+        self.listen_port
     }
 }
 

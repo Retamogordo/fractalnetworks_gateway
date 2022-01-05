@@ -3,13 +3,14 @@ use crate::util::*;
 use crate::Global;
 use anyhow::{Context, Result};
 use event_types::{GatewayEvent, GatewayPeerConnectedEvent};
-use gateway_client::TrafficInfo;
+use gateway_client::{Traffic, TrafficInfo};
 use log::*;
 use sqlx::{query, query_as, SqlitePool};
+use std::collections::{BTreeMap, HashSet};
 use std::net::SocketAddr;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
-use wireguard_keys::Privkey;
+use wireguard_keys::{Privkey, Pubkey};
 
 /// Minimum amount of traffic to be recorded. This exists because we don't
 /// need to store a traffic entry if no traffic has occured. But because of
@@ -18,32 +19,34 @@ use wireguard_keys::Privkey;
 /// it. The traffic will still accumulate, so no information is lost.
 pub const TRAFFIC_MINIMUM: usize = 1024;
 
+type PeerCache = BTreeMap<u16, BTreeMap<Pubkey, PeerStats>>;
+
 /// Start watchdog process that repeatedly checks the state of the system, with
 /// a configurable interval.
 pub async fn watchdog(global: &Global) -> Result<()> {
     info!("Launching watchdog every {}s", global.watchdog.as_secs());
     let mut interval = tokio::time::interval(global.watchdog);
     interval.tick().await;
-    let mut traffic = TrafficInfo::new(0);
+    let mut peer_cache = PeerCache::new();
     loop {
         interval.tick().await;
-        watchdog_run(&global, &mut traffic).await?;
+        watchdog_run(&global, &mut peer_cache).await?;
     }
 }
 
-pub async fn watchdog_run(global: &Global, traffic_prev: &mut TrafficInfo) -> Result<()> {
+pub async fn watchdog_run(global: &Global, cache: &mut PeerCache) -> Result<()> {
     info!("Running watchdog");
     let netns_items = netns_list().await.context("Listing network namespaces")?;
-    let mut traffic_info = TrafficInfo::new(0);
+    let mut traffic = TrafficInfo::new(0);
     for netns in &netns_items {
         if netns.name.starts_with(NETNS_PREFIX) {
-            match watchdog_netns(global, &mut traffic_info, traffic_prev, &netns.name).await {
+            match watchdog_netns(global, &mut traffic, cache, &netns.name).await {
                 Ok(_) => {}
                 Err(e) => error!("Error in watchdog_netns: {:?}", e),
             }
         }
     }
-    global.traffic.send(traffic_info)?;
+    global.traffic.send(traffic)?;
     global
         .event(&GatewayEvent::PeerConnected(GatewayPeerConnectedEvent {
             endpoint: "127.0.0.1:9000".parse().unwrap(),
@@ -57,115 +60,79 @@ pub async fn watchdog_run(global: &Global, traffic_prev: &mut TrafficInfo) -> Re
 pub async fn watchdog_netns(
     global: &Global,
     traffic: &mut TrafficInfo,
-    prev: &mut TrafficInfo,
+    cache: &mut PeerCache,
     netns: &str,
 ) -> Result<()> {
+    // pull wireguard stats
     let wgif = format!("wg{}", &netns[8..]);
     let stats = wireguard_stats(&netns, &wgif)
         .await
         .context("Fetching wireguard stats")?;
+
+    // if not exists, create and fetch cache for this wireguard network
+    let mut entry = cache
+        .entry(stats.listen_port())
+        .or_insert_with(|| BTreeMap::new());
+
+    // fetch handle peer stats
+    let mut peers = HashSet::new();
     for peer in stats.peers() {
-        match watchdog_peer(global, traffic, prev, &stats, &peer).await {
+        peers.insert(peer.public_key);
+        match watchdog_peer(global, traffic, entry, &stats, &peer).await {
             Ok(_) => {}
             Err(e) => error!("Error in watchdog_peer: {:?}", e),
         }
     }
+
+    // determine which peers are dead
+    let mut dead_peers = Vec::new();
+    for (peer, _) in entry.iter() {
+        if !peers.contains(peer) {
+            dead_peers.push(*peer);
+        }
+    }
+
+    // remove dead peers from cache
+    for peer in dead_peers {
+        entry.remove(&peer);
+    }
+
     Ok(())
 }
 
 pub async fn watchdog_peer(
     global: &Global,
     traffic: &mut TrafficInfo,
-    prev: &mut TrafficInfo,
+    cache: &mut BTreeMap<Pubkey, PeerStats>,
     stats: &NetworkStats,
     peer: &PeerStats,
 ) -> Result<()> {
-    let mut conn = global.database.acquire().await?;
-    // insert network pubkey
-    query(
-        "INSERT OR IGNORE INTO gateway_network(network_pubkey)
-            VALUES (?)",
-    )
-    .bind(&stats.public_key[..])
-    .execute(&mut conn)
-    .await?;
-    let network_id: (i64,) = query_as(
-        "SELECT network_id FROM gateway_network
-            WHERE network_pubkey = ?",
-    )
-    .bind(&stats.public_key[..])
-    .fetch_one(&mut conn)
-    .await
-    .context("Looking up network_id")?;
-    let network_id = network_id.0;
-
-    query(
-        "INSERT OR IGNORE INTO gateway_device(device_pubkey)
-            VALUES (?)",
-    )
-    .bind(&peer.public_key[..])
-    .execute(&mut conn)
-    .await?;
-    let device_id: (i64,) = query_as(
-        "SELECT device_id FROM gateway_device
-            WHERE device_pubkey = ?",
-    )
-    .bind(&peer.public_key[..])
-    .fetch_one(&mut conn)
-    .await
-    .context("Looking up device_id")?;
-    let device_id = device_id.0;
-
-    // find most recent entry for this peer
-    let prev: Option<(i64, i64, i64)> = query_as(
-        "SELECT traffic_rx_raw, traffic_tx_raw, MAX(time) FROM gateway_traffic
-            WHERE network_id = ? AND device_id = ?",
-    )
-    .bind(network_id)
-    .bind(device_id)
-    .fetch_optional(&mut conn)
-    .await?;
-
-    // find out how much traffic has occured since last watchdog run
-    let (traffic_rx, traffic_tx) = if let Some((traffic_rx_raw, traffic_tx_raw, _time)) = prev {
-        let traffic_rx = peer.transfer_rx as i64;
-        let traffic_tx = peer.transfer_tx as i64;
-        if traffic_rx_raw < traffic_rx && traffic_tx_raw < traffic_tx {
-            (traffic_rx - traffic_rx_raw, traffic_tx - traffic_tx_raw)
+    if let Some(previous) = cache.get(&peer.public_key) {
+        let time = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)?
+            .as_secs() as usize;
+        if previous.transfer_rx > peer.transfer_rx || previous.transfer_tx > peer.transfer_tx {
+            error!(
+                "Cache invalid for network {} peer {}",
+                stats.public_key, peer.public_key
+            );
         } else {
-            (0, 0)
+            // how much traffic has been generated in total?
+            let difference = (previous.transfer_rx - peer.transfer_rx)
+                + (previous.transfer_tx - peer.transfer_tx);
+
+            // only send out traffic if traffic has occured
+            if difference > 0 {
+                let traffic_item = Traffic::new(
+                    peer.transfer_rx - previous.transfer_rx,
+                    peer.transfer_tx - previous.transfer_tx,
+                );
+                traffic.add(stats.public_key, peer.public_key, time, traffic_item);
+            }
         }
     } else {
-        (0, 0)
-    };
-
-    // if there has been less than the minimum amount of traffic recorded,
-    // don't record it yet.
-    if ((traffic_rx + traffic_tx) as usize) < TRAFFIC_MINIMUM {
-        return Ok(());
     }
 
-    // insert entry
-    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?;
-    query(
-        "INSERT INTO gateway_traffic(
-            network_id,
-            device_id,
-            time,
-            traffic_rx,
-            traffic_rx_raw,
-            traffic_tx,
-            traffic_tx_raw)
-        VALUES (?, ?, ?, ?, ?, ?, ?)",
-    )
-    .bind(network_id)
-    .bind(device_id)
-    .bind(timestamp.as_secs() as i64)
-    .bind(traffic_rx as i64)
-    .bind(peer.transfer_rx as i64)
-    .bind(traffic_tx as i64)
-    .bind(peer.transfer_tx as i64)
-    .execute(&mut conn)
-    .await?;
+    cache.insert(peer.public_key, peer.clone());
     Ok(())
 }
