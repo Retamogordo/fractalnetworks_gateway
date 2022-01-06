@@ -137,12 +137,14 @@ pub struct Global {
     ///
     /// The database is used only to store traffic data.
     database: SqlitePool,
+    /// Traffic Stream.
+    traffic: EventCollector<TrafficInfo>,
     /// Broadcast queue for sending traffic data.
-    traffic: Sender<TrafficInfo>,
+    traffic_broadcast: Sender<TrafficInfo>,
     /// Events stream for gateway. These events are sent out on the gRPC socket.
     events: EventCollector<GatewayEvent>,
     /// Underlying channel that events are sent on.
-    events_channel: Sender<GatewayEvent>,
+    events_broadcast: Sender<GatewayEvent>,
 }
 
 impl Global {
@@ -194,10 +196,16 @@ impl Global {
 
 impl Options {
     pub async fn global(&self) -> Result<Global> {
-        let (traffic, _) = channel(BROADCAST_QUEUE_TRAFFIC);
-        let (events_channel, _) = channel(BROADCAST_QUEUE_EVENTS);
+        // set up resilient traffic event emitter
+        let (traffic_broadcast, _) = channel(BROADCAST_QUEUE_TRAFFIC);
+        let mut traffic = EventCollector::new();
+        traffic.emitter(BroadcastEmitter::new(traffic_broadcast.clone()));
+
+        // set up resilient event emitter
+        let (events_broadcast, _) = channel(BROADCAST_QUEUE_EVENTS);
         let mut events = EventCollector::new();
-        events.emitter(BroadcastEmitter::new(events_channel.clone()));
+        events.emitter(BroadcastEmitter::new(events_broadcast.clone()));
+
         let global = Global {
             lock: Arc::new(Mutex::new(())),
             iptables_lock: Arc::new(Mutex::new(())),
@@ -207,8 +215,9 @@ impl Options {
             garbage: self.garbage,
             database: self.database().await?,
             traffic,
+            traffic_broadcast,
             events,
-            events_channel,
+            events_broadcast,
         };
 
         Ok(global)

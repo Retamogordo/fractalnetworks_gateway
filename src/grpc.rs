@@ -51,7 +51,7 @@ impl Gateway for Global {
     ) -> Result<Response<Self::TrafficStream>, Status> {
         let traffic_request = request.into_inner();
         self.check_token(&traffic_request.token)?;
-        let receiver = self.traffic.subscribe();
+        let receiver = self.traffic_broadcast.subscribe();
         let stream = BroadcastStream::new(receiver).filter_map(|traffic| async move {
             match traffic {
                 Ok(traffic) => Some(Ok(proto::TrafficResponse {
@@ -71,7 +71,7 @@ impl Gateway for Global {
     ) -> Result<Response<Self::EventsStream>, Status> {
         let state_request = request.into_inner();
         self.check_token(&state_request.token)?;
-        let subscription = self.events_channel.subscribe();
+        let subscription = self.events_broadcast.subscribe();
         let stream = BroadcastStream::new(subscription).filter_map(|event| async move {
             match event {
                 Ok(event) => Some(Ok(proto::EventsResponse {

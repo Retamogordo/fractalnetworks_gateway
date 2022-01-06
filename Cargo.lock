@@ -175,9 +175,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.8.0"
+version = "3.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f1e260c3a9040a7c19a12468758f4c16f31a81a1fe087482be9570ec864bb6c"
+checksum = "fe438c9d2f2b0fb88a112154ed81e30b0a491c29322afe1db3b6eec5811f5ba0"
 
 [[package]]
 name = "byte-tools"
@@ -502,7 +502,7 @@ dependencies = [
 [[package]]
 name = "event-types"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/event-types#0b5580822ebd17c1e39b99bf7f5b11bd1cb8cfab"
+source = "git+https://gitlab.com/fractalnetworks/event-types#913b4ebc488ac768489caed5c2eb029f9ee097f6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2419,9 +2419,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.84"
+version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecb2e6da8ee5eb9a61068762a32fa9619cc591ceb055b3687f4cd4051ec2e06b"
+checksum = "a684ac3dcd8913827e18cd09a68384ee66c1de24157e3c556c9ab16d85695fb7"
 dependencies = [
  "proc-macro2",
  "quote",

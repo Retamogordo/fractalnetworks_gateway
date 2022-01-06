@@ -49,7 +49,7 @@ pub async fn watchdog_run(global: &Global, cache: &mut PeerCache) -> Result<()> 
             }
         }
     }
-    global.traffic.send(traffic);
+    global.traffic.event(&traffic).await?;
     Ok(())
 }
 
