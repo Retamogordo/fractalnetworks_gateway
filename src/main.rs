@@ -61,9 +61,6 @@ pub enum Command {
     /// Generate OpenAPI documentation.
     #[cfg(feature = "openapi")]
     Openapi,
-    /// Run as gRPC service.
-    #[cfg(feature = "grpc")]
-    Grpc(Options),
     /// Migrate database.
     Migrate {
         /// Database to migrate.
@@ -74,11 +71,15 @@ pub enum Command {
 /// Command-line options for running gateway (either as REST or a gRPC service).
 #[derive(StructOpt, Clone, Debug)]
 pub struct Options {
+    #[cfg(feature = "grpc")]
+    /// Enable REST API. By default, only gRPC service is started.
+    #[structopt(long, short, env = "GATEWAY_REST")]
+    rest: bool,
+
+    #[cfg(feature = "grpc")]
     /// Where to listen on for incoming requests.
-    ///
-    /// Only works for gRPC mode, when using REST API use `ROCKET_ADDRESS` and `ROCKET_PORT`.
-    #[structopt(long, short, env = "GATEWAY_LISTEN", default_value = "0.0.0.0:8000")]
-    listen: SocketAddr,
+    #[structopt(long, env = "GATEWAY_GRPC_LISTEN", default_value = "0.0.0.0:8000")]
+    grpc_listen: SocketAddr,
 
     /// What database file to use to log traffic data to.
     #[structopt(long, short, env = "GATEWAY_DATABASE")]
@@ -247,13 +248,7 @@ impl Options {
         Ok(pool)
     }
 
-    pub async fn run(self) -> Result<()> {
-        let global = self.global().await?;
-
-        global.watchdog().await;
-        global.garbage().await;
-        gateway::startup(&self).await?;
-
+    pub async fn run(&self, global: Global) -> Result<()> {
         // launch REST API
         rocket::build()
             .mount("/api/v1", api::routes())
@@ -280,15 +275,27 @@ async fn main() -> Result<()> {
             println!("{}", serde_json::to_string(&openapi)?);
             Ok(())
         }
-        #[cfg(feature = "grpc")]
-        Command::Grpc(options) => grpc::run(&options).await,
         Command::Migrate { database } => {
             let pool = SqlitePool::connect(&database).await?;
             sqlx::migrate!().run(&pool).await?;
             Ok(())
         }
         Command::Run(options) => {
-            options.run().await?;
+            let global = options.global().await?;
+
+            global.watchdog().await;
+            global.garbage().await;
+            gateway::startup(&options).await?;
+
+            #[cfg(feature = "grpc")]
+            if !options.rest {
+                grpc::run(&options, global).await;
+                return Ok(());
+            } else {
+                return options.run(global).await;
+            }
+
+            options.run(global).await?;
             Ok(())
         }
     }

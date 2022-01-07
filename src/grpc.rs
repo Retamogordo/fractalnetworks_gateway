@@ -84,15 +84,10 @@ impl Gateway for Global {
     }
 }
 
-pub async fn run(options: &Options) -> Result<(), anyhow::Error> {
-    let global = options.global().await?;
-    global.watchdog().await;
-    global.garbage().await;
-    gateway::startup(&global.options).await?;
-
+pub async fn run(options: &Options, global: Global) -> Result<(), anyhow::Error> {
     Server::builder()
         .add_service(GatewayServer::new(global))
-        .serve(options.listen)
+        .serve(options.grpc_listen)
         .await?;
 
     Ok(())
