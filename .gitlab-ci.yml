@@ -17,7 +17,7 @@ rustfmt:
   stage: test
   allow_failure: true
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo fmt -- --check
   interruptible: true
 
@@ -27,7 +27,7 @@ clippy:
   stage: test
   allow_failure: true
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo clippy
   interruptible: true
 
@@ -36,7 +36,7 @@ test:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: test
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo test
   interruptible: true
 
@@ -45,7 +45,7 @@ build:amd64:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: build
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo build --release
   artifacts:
     paths:
@@ -58,7 +58,7 @@ build:arm32:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm32
   stage: build
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo build --release --target arm-unknown-linux-gnueabihf
   artifacts:
     paths:
@@ -71,7 +71,7 @@ build:arm64:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm64
   stage: build
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo build --release --target aarch64-unknown-linux-gnu
   artifacts:
     paths:
@@ -85,7 +85,7 @@ openapi:
   stage: build
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-amd64
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo build --features openapi
     - mkdir -p target/openapi
     - target/debug/gateway openapi > target/openapi/gateway.json
@@ -101,7 +101,7 @@ rustdoc:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
   stage: build
   script:
-    - ci-setup-cargo
+    - source ci-setup-cargo
     - cargo doc --no-deps
   artifacts:
     paths:
