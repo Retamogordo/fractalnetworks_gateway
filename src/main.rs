@@ -73,7 +73,7 @@ pub enum Command {
 pub struct Options {
     #[cfg(feature = "grpc")]
     /// Enable REST API. By default, only gRPC service is started.
-    #[structopt(long, short, env = "GATEWAY_REST")]
+    #[structopt(long, env = "GATEWAY_REST")]
     rest: bool,
 
     #[cfg(feature = "grpc")]

@@ -81,7 +81,6 @@ build:arm64:
 
 # generate swagger API docs.
 openapi:
-  allow_failure: true
   stage: build
   image: registry.gitlab.com/fractalnetworks/images/rust:stable-amd64
   script:
