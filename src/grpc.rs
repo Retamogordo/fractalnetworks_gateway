@@ -92,7 +92,7 @@ pub async fn run(options: &Options) -> Result<(), anyhow::Error> {
 
     Server::builder()
         .add_service(GatewayServer::new(global))
-        .serve("0.0.0.0:9090".parse().unwrap())
+        .serve(options.listen)
         .await?;
 
     Ok(())

@@ -74,6 +74,12 @@ pub enum Command {
 /// Command-line options for running gateway (either as REST or a gRPC service).
 #[derive(StructOpt, Clone, Debug)]
 pub struct Options {
+    /// Where to listen on for incoming requests.
+    ///
+    /// Only works for gRPC mode, when using REST API use `ROCKET_ADDRESS` and `ROCKET_PORT`.
+    #[structopt(long, short, env = "GATEWAY_LISTEN", default_value = "0.0.0.0:8000")]
+    listen: SocketAddr,
+
     /// What database file to use to log traffic data to.
     #[structopt(long, short, env = "GATEWAY_DATABASE")]
     database: Option<String>,
