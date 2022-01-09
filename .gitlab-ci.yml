@@ -120,7 +120,7 @@ docker:
     - docker build . -t "$CI_REGISTRY_IMAGE:latest"
     - docker push "$CI_REGISTRY_IMAGE:latest"
   only:
-    - master
+    - main
 
 # publish binary, docs and API docs to gitlab pages.
 pages:
@@ -136,15 +136,15 @@ pages:
     - mkdir public
     - mv target/doc public/doc
     - mv target/openapi public/api
-    - mv target/release/gateway public/gateway-master-amd64
-    - sign public/gateway-master-amd64
-    - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-master-arm32
-    - sign public/gateway-master-arm32
-    - mv target/aarch64-unknown-linux-gnu/release/gateway public/gateway-master-arm64
-    - sign public/gateway-master-arm64
+    - mv target/release/gateway public/gateway-amd64
+    - sign public/gateway-amd64
+    - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-arm32
+    - sign public/gateway-arm32
+    - mv target/aarch64-unknown-linux-gnu/release/gateway public/gateway-arm64
+    - sign public/gateway-arm64
   artifacts:
     paths:
       - public
     expire_in: 1 week
   only:
-    - master
+    - main

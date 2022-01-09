@@ -6,9 +6,9 @@ allowing ingress traffic from the internet to reach the nodes, and monitoring
 the state of the interfaces and traffic that occurs for accounting purposes.
 
 Builds:
-- [gateway-master-amd64][] ([signature][gateway-master-amd64.sig])
-- [gateway-master-arm64][] ([signature][gateway-master-arm64.sig])
-- [gateway-master-arm32][] ([signature][gateway-master-arm32.sig])
+- [gateway-amd64][] ([signature][gateway-amd64.sig])
+- [gateway-arm64][] ([signature][gateway-arm64.sig])
+- [gateway-arm32][] ([signature][gateway-arm32.sig])
 
 Containers:
 - [`registry.gitlab.com/fractalnetworks/gateway`][registry]
@@ -217,13 +217,13 @@ Some configuration options can be passed as environment variables:
 [rocket]: https://rocket.rs/
 [rustup]: https://rustup.rs/
 
-[gateway-master-amd64]: https://fractalnetworks.gitlab.io/gateway/gateway-master-amd64
-[gateway-master-arm64]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm64
-[gateway-master-arm32]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm32
+[gateway-amd64]: https://fractalnetworks.gitlab.io/gateway/gateway-amd64
+[gateway-arm64]: https://fractalnetworks.gitlab.io/gateway/gateway-arm64
+[gateway-arm32]: https://fractalnetworks.gitlab.io/gateway/gateway-arm32
 
-[gateway-master-amd64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-amd64.sig
-[gateway-master-arm64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm64.sig
-[gateway-master-arm32.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-master-arm32.sig
+[gateway-amd64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-amd64.sig
+[gateway-arm64.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-arm64.sig
+[gateway-arm32.sig]: https://fractalnetworks.gitlab.io/gateway/gateway-arm32.sig
 
 [rustdoc]: https://fractalnetworks.gitlab.io/gateway/doc/gateway
 [openapi]: https://fractalnetworks.gitlab.io/gateway/api
