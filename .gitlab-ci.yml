@@ -12,7 +12,7 @@ stages:
 
 # make sure that formatting is correct.
 check-formatting:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable:v1
   stage: test
   allow_failure: true
   script:
@@ -22,7 +22,7 @@ check-formatting:
 
 # make sure there are no issues with the code.
 check-mistakes:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable:v1
   stage: test
   allow_failure: true
   script:
@@ -42,7 +42,7 @@ check-version:
 
 # run unit tests.
 test:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable:v1
   stage: test
   script:
     - source ci-setup-cargo
@@ -51,7 +51,7 @@ test:
 
 # generate release build
 build:amd64:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable:v1
   stage: build
   script:
     - ci-setup-cargo
@@ -63,7 +63,7 @@ build:amd64:
 
 # build for arm target
 build:arm32:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm32
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable-arm32:v1
   stage: build
   script:
     - ci-setup-cargo
@@ -75,7 +75,7 @@ build:arm32:
 
 # build for arm target
 build:arm64:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable-arm64
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable-arm64:v1
   stage: build
   script:
     - ci-setup-cargo
@@ -87,7 +87,7 @@ build:arm64:
 
 # generate rust html documentation
 rustdoc:
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable
+  image: registry.gitlab.com/fractalnetworks/images/rust-stable:v1
   stage: build
   script:
     - ci-setup-cargo
@@ -99,7 +99,7 @@ rustdoc:
 
 # publish binary, docs and API docs to gitlab pages.
 pages:
-  image: registry.gitlab.com/fractalnetworks/images/pages
+  image: registry.gitlab.com/fractalnetworks/images/pages:v1
   stage: deploy
   dependencies:
     - build:amd64
