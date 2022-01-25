@@ -26,6 +26,8 @@ mod garbage;
 mod gateway;
 #[cfg(feature = "grpc")]
 mod grpc;
+#[cfg(feature = "grpc")]
+mod manager;
 mod token;
 mod types;
 mod util;
@@ -104,6 +106,10 @@ pub struct Options {
     /// Add custom HTTPS forwarding
     #[structopt(long, env = "GATEWAY_CUSTOM_FORWARDING", parse(try_from_str = parse_custom_forwarding), use_delimiter = true)]
     custom_forwarding: Vec<(Url, SocketAddr)>,
+
+    /// Where to connect to get the manager
+    #[structopt(long, short, env = "GATEWAY_MANAGER")]
+    manager: Url,
 }
 
 /// Given a forwarding scheme like `https://domain.com=127.0.0.1:8000`, parse it
@@ -249,6 +255,8 @@ impl Options {
     }
 
     pub async fn run(&self, global: Global) -> Result<()> {
+        tokio::spawn(manager::connect(global.clone(), self.manager.clone()));
+
         // launch REST API
         rocket::build()
             .mount("/api/v1", api::routes())
@@ -281,11 +289,13 @@ async fn main() -> Result<()> {
             Ok(())
         }
         Command::Run(options) => {
-            let global = options.global().await?;
+            let global = options.global().await.context("Creating global options")?;
 
             global.watchdog().await;
             global.garbage().await;
-            gateway::startup(&options).await?;
+            gateway::startup(&options)
+                .await
+                .context("Starting up gateway")?;
 
             #[cfg(feature = "grpc")]
             if !options.rest {

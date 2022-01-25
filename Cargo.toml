@@ -27,6 +27,7 @@ futures = "0.3.19"
 url = { version = "2", features = ["serde"] }
 base32 = "0.4.0"
 gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client", branch = "v0.1" }
+gateway-manager-client = { git = "https://gitlab.com/fractalnetworks/gateway-manager-client", branch = "v0.1" }
 wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys", branch = "v0.1" }
 schemars = { git = "https://github.com/xfbs/schemars", optional = true }
 okapi = { version = "0.7.0-rc.1", optional = true }
@@ -40,7 +41,7 @@ event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features
 default = ["grpc"]
 schema = ["schemars", "gateway-client/schema"]
 openapi = ["okapi", "schema", "rocket_okapi"]
-grpc = ["gateway-client/proto", "tonic"]
+grpc = ["gateway-client/proto", "tonic", "gateway-manager-client/proto"]
 
 [patch.crates-io]
 schemars = { git = "https://github.com/xfbs/schemars", optional = true }
