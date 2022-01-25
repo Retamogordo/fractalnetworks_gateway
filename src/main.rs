@@ -255,7 +255,6 @@ impl Options {
     }
 
     pub async fn run(&self, global: Global) -> Result<()> {
-        tokio::spawn(manager::connect(global.clone(), self.manager.clone()));
 
         // launch REST API
         rocket::build()
@@ -297,6 +296,9 @@ async fn main() -> Result<()> {
                 .await
                 .context("Starting up gateway")?;
 
+            manager::connect(global.clone(), options.manager.clone()).await;
+
+            /*
             #[cfg(feature = "grpc")]
             if !options.rest {
                 grpc::run(&options, global).await;
@@ -304,8 +306,8 @@ async fn main() -> Result<()> {
             } else {
                 return options.run(global).await;
             }
+            */
 
-            options.run(global).await?;
             Ok(())
         }
     }
