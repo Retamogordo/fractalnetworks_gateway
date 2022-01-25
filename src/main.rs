@@ -80,8 +80,8 @@ pub struct Options {
 
     #[cfg(feature = "grpc")]
     /// Where to listen on for incoming requests.
-    #[structopt(long, env = "GATEWAY_GRPC_LISTEN", default_value = "0.0.0.0:8000")]
-    grpc_listen: SocketAddr,
+    #[structopt(long, env = "GATEWAY_GRPC")]
+    grpc_listen: Option<SocketAddr>,
 
     /// What database file to use to log traffic data to.
     #[structopt(long, short, env = "GATEWAY_DATABASE")]
@@ -254,8 +254,7 @@ impl Options {
         Ok(pool)
     }
 
-    pub async fn run(&self, global: Global) -> Result<()> {
-
+    pub async fn rest(self, global: Global) -> Result<()> {
         // launch REST API
         rocket::build()
             .mount("/api/v1", api::routes())
@@ -296,17 +295,15 @@ async fn main() -> Result<()> {
                 .await
                 .context("Starting up gateway")?;
 
-            manager::connect(global.clone(), options.manager.clone()).await;
-
-            /*
-            #[cfg(feature = "grpc")]
-            if !options.rest {
-                grpc::run(&options, global).await;
-                return Ok(());
-            } else {
-                return options.run(global).await;
+            if options.rest {
+                tokio::spawn(options.clone().rest(global.clone()));
             }
-            */
+
+            if let Some(grpc_listen) = options.grpc_listen {
+                tokio::spawn(grpc::run(global.clone(), grpc_listen));
+            }
+
+            manager::connect(global.clone(), options.manager.clone()).await;
 
             Ok(())
         }

@@ -10,7 +10,10 @@ ENV ROCKET_PORT=${GATEWAY_REST_PORT}
 ENV RUST_LOG=info,sqlx=warn
 ENV RUST_BACKTRACE=1
 
+# install dependencies
 RUN apt update && apt install -y --no-install-recommends iptables iproute2 wireguard-tools nginx && rm -rf /var/lib/apt/lists/*
+
+# copy entrypoint and binary
 COPY /target/release/gateway /usr/local/bin/gateway
 COPY scripts/entrypoint.sh /bin/entrypoint.sh
 

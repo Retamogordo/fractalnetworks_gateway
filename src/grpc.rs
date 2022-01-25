@@ -7,6 +7,7 @@ use gateway_client::proto::gateway_server::{Gateway, GatewayServer};
 use gateway_client::GatewayConfig;
 use sqlx::SqlitePool;
 use std::pin::Pin;
+use std::net::SocketAddr;
 use tokio_stream::wrappers::BroadcastStream;
 use tonic::{transport::Server, Request, Response, Status};
 
@@ -84,10 +85,10 @@ impl Gateway for Global {
     }
 }
 
-pub async fn run(options: &Options, global: Global) -> Result<(), anyhow::Error> {
+pub async fn run(global: Global, grpc_listen: SocketAddr) -> Result<(), anyhow::Error> {
     Server::builder()
         .add_service(GatewayServer::new(global))
-        .serve(options.grpc_listen)
+        .serve(grpc_listen)
         .await?;
 
     Ok(())
