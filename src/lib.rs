@@ -45,6 +45,26 @@ impl DerefMut for GatewayConfig {
     }
 }
 
+/// Represents a partial configuration of the gateway. All ports are listed,
+/// but those containing a `None` value did not change.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct GatewayConfigPartial(BTreeMap<u16, Option<NetworkState>>);
+
+impl Deref for GatewayConfigPartial {
+    type Target = BTreeMap<u16, Option<NetworkState>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for GatewayConfigPartial {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 /// Default MTU for WireGuard networks.
 fn default_mtu() -> usize {
     1420
