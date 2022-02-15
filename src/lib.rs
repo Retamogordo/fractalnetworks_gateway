@@ -272,13 +272,13 @@ impl GatewayClient for Url {
 
     async fn config_get(
         &self,
-        client: &Client,
-        token: &str,
+        _client: &Client,
+        _token: &str,
     ) -> Result<GatewayConfig, GatewayError> {
         unimplemented!()
     }
 
-    async fn status_get(&self, client: &Client, token: &str) -> Result<(), GatewayError> {
+    async fn status_get(&self, _client: &Client, _token: &str) -> Result<(), GatewayError> {
         unimplemented!()
     }
 
@@ -286,7 +286,7 @@ impl GatewayClient for Url {
         &self,
         client: &Client,
         token: &str,
-        since: Option<usize>,
+        _since: Option<usize>,
     ) -> Result<TrafficInfo, GatewayError> {
         let url = self
             .join(&"/api/v1/traffic.json")

@@ -6,10 +6,8 @@ use futures::StreamExt;
 use gateway_client::proto::{
     gateway_client::GatewayClient as GatewayGrpcClient, ApplyRequest, EventsRequest, TrafficRequest,
 };
-use gateway_client::{GatewayClient, GatewayConfig, TrafficInfo};
+use gateway_client::{GatewayClient, TrafficInfo};
 use reqwest::{Client, ClientBuilder};
-use serde_json::to_string_pretty;
-use std::net::Ipv4Addr;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::fs::File;
@@ -95,7 +93,7 @@ impl Runnable for ConfigSetCommand {
             let mut client = GatewayGrpcClient::connect(options.api.to_string())
                 .await
                 .context("Connecting to Gateway via gRPC")?;
-            let response = client
+            let _response = client
                 .apply(Request::new(ApplyRequest {
                     token: options.token.clone(),
                     config: serde_json::to_string(&config)?,
@@ -152,7 +150,7 @@ impl Runnable for EventsCommand {
             let mut client = GatewayGrpcClient::connect(options.api.to_string())
                 .await
                 .context("Connecting to Gateway via gRPC")?;
-            let mut response = client
+            let response = client
                 .events(Request::new(EventsRequest {
                     token: options.token.clone(),
                 }))
