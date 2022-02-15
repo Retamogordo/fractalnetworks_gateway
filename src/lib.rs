@@ -70,6 +70,26 @@ fn default_mtu() -> usize {
     1420
 }
 
+/// Requests coming in for the gateway
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum GatewayReqest {
+    /// Apply entire new config to gateway
+    Apply(GatewayConfig),
+    /// Apply partial config to gateway
+    ApplyPartial(GatewayConfigPartial),
+}
+
+/// Responses sent back out by gateway
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum GatewayResponse {
+    /// Send out traffic data
+    Traffic(TrafficInfo),
+    /// Send out events
+    Event(String),
+    /// Result for the last apply operation
+    Apply(Result<String, String>),
+}
+
 /// Represents the configuration state of one particular WireGuard network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug)]
