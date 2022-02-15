@@ -72,7 +72,7 @@ fn default_mtu() -> usize {
 
 /// Requests coming in for the gateway
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum GatewayReqest {
+pub enum GatewayRequest {
     /// Apply entire new config to gateway
     Apply(GatewayConfig),
     /// Apply partial config to gateway
