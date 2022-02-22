@@ -6,8 +6,8 @@ use gateway_client::proto;
 use gateway_client::proto::gateway_server::{Gateway, GatewayServer};
 use gateway_client::GatewayConfig;
 use sqlx::SqlitePool;
-use std::pin::Pin;
 use std::net::SocketAddr;
+use std::pin::Pin;
 use tokio_stream::wrappers::BroadcastStream;
 use tonic::{transport::Server, Request, Response, Status};
 

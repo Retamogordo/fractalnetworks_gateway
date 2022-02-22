@@ -48,8 +48,8 @@ use token::Token;
 use tokio::fs::File;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
-use url::Url;
 use tokio_tungstenite::tungstenite::handshake::client::Request;
+use url::Url;
 
 /// Broadcast queue length for traffic data.
 const BROADCAST_QUEUE_TRAFFIC: usize = 16;
@@ -160,6 +160,12 @@ pub struct Global {
     events: EventCollector<GatewayEvent>,
     /// Underlying channel that events are sent on.
     events_broadcast: Sender<GatewayEvent>,
+
+    /// JWT or ApiKey used to connect to manager.
+    token: String,
+
+    /// Where to connect to for the manager
+    manager: Url,
 }
 
 impl Global {
@@ -233,6 +239,8 @@ impl Options {
             traffic_broadcast,
             events,
             events_broadcast,
+            token: self.secret.clone(),
+            manager: self.manager.clone(),
         };
 
         Ok(global)
