@@ -29,7 +29,8 @@ mod watchdog;
 mod websocket;
 
 use anyhow::{anyhow, Context, Result};
-use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector, GatewayEvent};
+use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector};
+use gateway_client::GatewayEvent;
 use gateway_client::TrafficInfo;
 use sqlx::SqlitePool;
 use std::net::SocketAddr;

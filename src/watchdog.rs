@@ -2,7 +2,7 @@ use crate::types::*;
 use crate::util::*;
 use crate::Global;
 use anyhow::{Context, Result};
-use event_types::{
+use gateway_client::{
     GatewayEvent, GatewayPeerConnectedEvent, GatewayPeerDisconnectedEvent, GatewayPeerEndpointEvent,
 };
 use gateway_client::{Traffic, TrafficInfo};
@@ -151,7 +151,7 @@ pub async fn watchdog_peer(
         if peer.endpoint != previous.endpoint {
             if let Some(endpoint) = peer.endpoint {
                 global
-                    .event(&GatewayEvent::PeerEndpoint(GatewayPeerEndpointEvent {
+                    .event(&GatewayEvent::Endpoint(GatewayPeerEndpointEvent {
                         endpoint: endpoint,
                         network: stats.public_key,
                         peer: peer.public_key,

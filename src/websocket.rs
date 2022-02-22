@@ -63,7 +63,9 @@ pub async fn connect_run(global: &Global) -> Result<()> {
             }
             event = events_sub.recv() => {
                 let event = event?;
-                //let message = to_string(&
+                let message = GatewayResponse::Event(event);
+                let message = to_string(&message)?;
+                socket.send(Message::Text(message)).await?;
             }
         }
     }
