@@ -262,6 +262,7 @@ async fn main() -> Result<()> {
 
     match command {
         Command::Migrate { database } => {
+            // migrate the database
             let pool = SqlitePool::connect(&database).await?;
             sqlx::migrate!().run(&pool).await?;
             Ok(())
@@ -278,6 +279,8 @@ async fn main() -> Result<()> {
                 .await
                 .context("Starting up gateway")?;
 
+            // connect to the websocket to get config from manager and send events
+            // and traffic data
             websocket::connect(global).await;
 
             Ok(())
