@@ -1,17 +1,19 @@
 use crate::Global;
 use anyhow::Result;
+use async_tungstenite::tokio::*;
+use async_tungstenite::tungstenite::client::IntoClientRequest;
+use async_tungstenite::tungstenite::handshake::client::Request;
+use async_tungstenite::tungstenite::http::header::AUTHORIZATION;
+use async_tungstenite::tungstenite::Message;
 use futures::{SinkExt, StreamExt};
 use gateway_client::{GatewayRequest, GatewayResponse};
 use log::*;
 use serde_json::{from_str, to_string};
 use std::time::Duration;
 use tokio::select;
-use tokio_tungstenite::connect_async;
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
-use tokio_tungstenite::tungstenite::handshake::client::Request;
-use tokio_tungstenite::tungstenite::Message;
 
 pub async fn connect(global: Global) {
+    info!("Connecting to manager at {}", global.manager);
     loop {
         // try connecting to websocket
         match connect_run(&global).await {
@@ -25,14 +27,11 @@ pub async fn connect(global: Global) {
 }
 
 pub async fn connect_run(global: &Global) -> Result<()> {
-    let request = Request::builder()
-        .uri(global.manager.to_string())
-        .header("Authorization", &format!("Bearer {}", global.token))
-        .body(())
-        .unwrap()
-        .into_client_request()?;
+    let request = Request::get(&global.manager.to_string())
+        .header(AUTHORIZATION, &format!("Bearer {}", global.token))
+        .body(())?;
 
-    let (mut socket, _response) = connect_async(request).await?;
+    let (mut socket, _response) = connect_async_with_tls_connector(request, None).await?;
     info!("Connected to websocket at {}", global.manager);
 
     let mut traffic_sub = global.traffic_broadcast.subscribe();

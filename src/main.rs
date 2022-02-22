@@ -42,7 +42,6 @@ use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
-use tokio_tungstenite::tungstenite::handshake::client::Request;
 use url::Url;
 
 /// Broadcast queue length for traffic data.

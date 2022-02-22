@@ -80,6 +80,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-tungstenite"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3fe458e5f0c283bd6315a884d30f90b654c612b2c16d676730ba71f23cf160a"
+dependencies = [
+ "futures-io",
+ "futures-util",
+ "log",
+ "pin-project-lite",
+ "rustls-native-certs",
+ "tokio",
+ "tokio-rustls 0.23.2",
+ "tungstenite",
+]
+
+[[package]]
 name = "atoi"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -598,6 +614,7 @@ name = "gateway"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-tungstenite",
  "base32",
  "env_logger",
  "event-types",
@@ -620,7 +637,6 @@ dependencies = [
  "tokio",
  "tokio-serde",
  "tokio-stream",
- "tokio-tungstenite",
  "tokio-util 0.7.0",
  "url",
  "wireguard-keys",
@@ -2255,22 +2271,6 @@ dependencies = [
  "pin-project-lite",
  "tokio",
  "tokio-util 0.6.9",
-]
-
-[[package]]
-name = "tokio-tungstenite"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06cda1232a49558c46f8a504d5b93101d42c0bf7f911f12a105ba48168f821ae"
-dependencies = [
- "futures-util",
- "log",
- "rustls 0.20.4",
- "rustls-native-certs",
- "tokio",
- "tokio-rustls 0.23.2",
- "tungstenite",
- "webpki 0.22.0",
 ]
 
 [[package]]
