@@ -305,15 +305,7 @@ async fn main() -> Result<()> {
                 .await
                 .context("Starting up gateway")?;
 
-            if options.rest {
-                tokio::spawn(options.clone().rest(global.clone()));
-            }
-
-            if let Some(grpc_listen) = options.grpc_listen {
-                tokio::spawn(grpc::run(global.clone(), grpc_listen));
-            }
-
-            manager::connect(global.clone(), options.manager.clone()).await;
+            websocket::connect(global).await;
 
             Ok(())
         }
