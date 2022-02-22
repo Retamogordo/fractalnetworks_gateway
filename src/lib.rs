@@ -16,6 +16,44 @@ use wireguard_keys::{Privkey, Pubkey, Secret};
 #[cfg(feature = "proto")]
 pub mod proto;
 
+/// Peer connected to the gateway.
+///
+/// This event is emitted on the gateway's event stream whenever a peer connects to a gateway.
+/// The gateway polls the wireguard interface's status periodically and emits this event whenever
+/// it detects a change.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GatewayPeerConnectedEvent {
+    pub network: Pubkey,
+    pub peer: Pubkey,
+    pub endpoint: SocketAddr,
+}
+
+/// Peer disconnected from the gateway.
+///
+/// This event is emitted when the last packet received from the peer is older than the keepalive
+/// packet interval.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GatewayPeerDisconnectedEvent {
+    pub network: Pubkey,
+    pub peer: Pubkey,
+}
+
+/// Peer endpoint has changed.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GatewayPeerEndpointEvent {
+    pub network: Pubkey,
+    pub peer: Pubkey,
+    pub endpoint: SocketAddr,
+}
+
+/// Gateway event types
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum GatewayEvent {
+    PeerConnected(GatewayPeerConnectedEvent),
+    PeerDisconnected(GatewayPeerDisconnectedEvent),
+    Endpoint(GatewayPeerEndpointEvent),
+}
+
 /// Possible errors that can happen when making a request to the gateway.
 #[derive(Error, Debug)]
 pub enum GatewayError {
@@ -85,7 +123,7 @@ pub enum GatewayResponse {
     /// Send out traffic data
     Traffic(TrafficInfo),
     /// Send out events
-    Event(String),
+    Event(GatewayEvent),
     /// Result for the last apply operation
     Apply(Result<String, String>),
 }
