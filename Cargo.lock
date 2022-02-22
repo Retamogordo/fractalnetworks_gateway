@@ -599,8 +599,10 @@ dependencies = [
  "tera",
  "thiserror",
  "tokio",
+ "tokio-serde",
  "tokio-stream",
  "tokio-tungstenite",
+ "tokio-util 0.7.0",
  "url",
  "wireguard-keys",
 ]
@@ -2162,6 +2164,18 @@ dependencies = [
  "rustls 0.20.4",
  "tokio",
  "webpki 0.22.0",
+]
+
+[[package]]
+name = "tokio-serde"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "911a61637386b789af998ee23f50aa30d5fd7edcec8d6d3dedae5e5815205466"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-sink",
+ "pin-project",
 ]
 
 [[package]]
