@@ -89,22 +89,6 @@ build:arm64:
     expire_in: 1 week
   interruptible: true
 
-# generate swagger API docs.
-openapi:
-  stage: build
-  image: registry.gitlab.com/fractalnetworks/images/rust:stable-amd64
-  script:
-    - source ci-setup-cargo
-    - cargo build --features openapi
-    - mkdir -p target/openapi
-    - target/debug/gateway openapi > target/openapi/gateway.json
-    - cp scripts/rapidoc.html target/openapi/index.html
-  artifacts:
-    paths:
-      - target/openapi
-    expire_in: 1 week
-  interruptible: true
-
 # generate rust html documentation
 rustdoc:
   image: registry.gitlab.com/fractalnetworks/images/rust:stable
@@ -140,12 +124,10 @@ pages:
     - build:amd64
     - build:arm32
     - build:arm64
-    - openapi
     - rustdoc
   script:
     - mkdir public
     - mv target/doc public/doc
-    - mv target/openapi public/api
     - mv target/release/gateway public/gateway-amd64
     - sign public/gateway-amd64
     - mv target/arm-unknown-linux-gnueabihf/release/gateway public/gateway-arm32

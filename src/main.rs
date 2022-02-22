@@ -55,9 +55,6 @@ const BROADCAST_QUEUE_EVENTS: usize = 16;
 pub enum Command {
     /// Run gateway.
     Run(Options),
-    /// Generate OpenAPI documentation.
-    #[cfg(feature = "openapi")]
-    Openapi,
     /// Migrate database.
     Migrate {
         /// Database to migrate.
@@ -264,12 +261,6 @@ async fn main() -> Result<()> {
     let command = Command::from_args();
 
     match command {
-        #[cfg(feature = "openapi")]
-        Command::Openapi => {
-            let openapi = api::openapi_json();
-            println!("{}", serde_json::to_string(&openapi)?);
-            Ok(())
-        }
         Command::Migrate { database } => {
             let pool = SqlitePool::connect(&database).await?;
             sqlx::migrate!().run(&pool).await?;
