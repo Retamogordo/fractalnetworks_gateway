@@ -4,24 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.3.0", features = ["process", "sync", "macros", "rt-multi-thread"] }
-serde = { version = "1.0.124", features = ["derive"] }
-anyhow = "1.0.38"
-rand_core = "0.6.2"
-thiserror = "1.0"
-ipnet = "2.3.0"
-serde_with = "1.6.4"
-serde_json = "1.0.64"
-sqlx = { version = "0.5.1", features = ["sqlite", "runtime-tokio-rustls"] }
-structopt = "0.3.21"
-env_logger = "0.8.3"
+tokio = { version = "1.17.0", features = ["process", "sync", "macros", "rt-multi-thread"] }
+serde = { version = "1.0.136", features = ["derive"] }
+anyhow = "1.0.55"
+rand_core = "0.6.3"
+thiserror = "1.0.30"
+ipnet = "2.3.1"
+serde_json = "1.0.79"
+sqlx = { version = "0.5.11", features = ["sqlite", "runtime-tokio-rustls"] }
+structopt = "0.3.26"
+env_logger = "0.9.0"
 log = "0.4.14"
-itertools = "0.10.0"
-parse_duration = "2.1.0"
+itertools = "0.10.3"
+parse_duration = "2.1.1"
 lazy_static = "1.4.0"
-tera = "1.7.0"
-futures = "0.3.19"
-url = { version = "2", features = ["serde"] }
+tera = "1.15.0"
+futures = "0.3.21"
+url = { version = "2.2.2", features = ["serde"] }
 gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client", branch = "v0.1" }
 gateway-manager-client = { git = "https://gitlab.com/fractalnetworks/gateway-manager-client", branch = "v0.1" }
 wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys", branch = "v0.1" }
