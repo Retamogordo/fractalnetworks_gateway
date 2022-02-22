@@ -4,13 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rocket = { version = "0.5.0-rc.1", features = ["json"] }
-tokio = { version = "1.3.0", features = ["process", "sync"] }
+tokio = { version = "1.3.0", features = ["process", "sync", "macros", "rt-multi-thread"] }
 serde = { version = "1.0.124", features = ["derive"] }
 anyhow = "1.0.38"
-base64 = "0.13.0"
 rand_core = "0.6.2"
-x25519-dalek-fiat = "0.1.0"
 thiserror = "1.0"
 ipnet = "2.3.0"
 serde_with = "1.6.4"
@@ -25,24 +22,14 @@ lazy_static = "1.4.0"
 tera = "1.7.0"
 futures = "0.3.19"
 url = { version = "2", features = ["serde"] }
-base32 = "0.4.0"
 gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client", branch = "v0.1" }
 gateway-manager-client = { git = "https://gitlab.com/fractalnetworks/gateway-manager-client", branch = "v0.1" }
 wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys", branch = "v0.1" }
-schemars = { git = "https://github.com/xfbs/schemars", optional = true }
-okapi = { version = "0.7.0-rc.1", optional = true }
-rocket_okapi = { version = "0.8.0-rc.1", optional = true }
-tonic = { version = "0.6", optional = true }
 regex = "1.5.4"
 tokio-stream = { version = "0.1.8", features = ["sync"] }
 event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features = ["broadcast"], branch = "v0.1" }
 tokio-tungstenite = "0.17.1"
+base32 = "0.4.0"
 
 [features]
-default = ["grpc"]
-schema = ["schemars", "gateway-client/schema"]
-openapi = ["okapi", "schema", "rocket_okapi"]
-grpc = ["gateway-client/proto", "tonic", "gateway-manager-client/proto"]
-
-[patch.crates-io]
-schemars = { git = "https://github.com/xfbs/schemars", optional = true }
+default = []

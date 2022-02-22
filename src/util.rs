@@ -2,7 +2,7 @@ use crate::types::*;
 use anyhow::{anyhow, Context, Result};
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use log::*;
-use rocket::serde::Deserialize;
+use serde::Deserialize;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;

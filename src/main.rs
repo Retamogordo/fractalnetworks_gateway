@@ -182,7 +182,7 @@ impl Global {
     /// and make sure that everything is running as it should.
     pub async fn watchdog(&self) {
         let global = self.clone();
-        rocket::tokio::spawn(async move {
+        tokio::spawn(async move {
             loop {
                 match watchdog::watchdog(&global).await {
                     Ok(_) => {}
@@ -197,7 +197,7 @@ impl Global {
         let database = self.database.clone();
         let garbage = self.garbage.clone();
         let retention = self.retention.clone();
-        rocket::tokio::spawn(async move {
+        tokio::spawn(async move {
             loop {
                 match garbage::garbage(&database, garbage, retention).await {
                     Ok(_) => {}
@@ -258,7 +258,7 @@ impl Options {
     }
 }
 
-#[rocket::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     env_logger::init();
     let command = Command::from_args();
