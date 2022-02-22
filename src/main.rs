@@ -24,10 +24,6 @@
 mod api;
 mod garbage;
 mod gateway;
-#[cfg(feature = "grpc")]
-mod grpc;
-#[cfg(feature = "grpc")]
-mod manager;
 mod token;
 mod types;
 mod util;
@@ -263,20 +259,6 @@ impl Options {
 
         Ok(pool)
     }
-
-    pub async fn rest(self, global: Global) -> Result<()> {
-        // launch REST API
-        rocket::build()
-            .mount("/api/v1", api::routes())
-            .manage(Token::new(&self.secret))
-            .manage(global.database.clone())
-            .manage(global)
-            .manage(self.clone())
-            .launch()
-            .await?;
-
-        Ok(())
-    }
 }
 
 #[rocket::main]
@@ -301,6 +283,9 @@ async fn main() -> Result<()> {
 
             global.watchdog().await;
             global.garbage().await;
+
+            // on startup, initialize nginx and set some default options (such as
+            // special redirects passed in on the command line).
             gateway::startup(&options)
                 .await
                 .context("Starting up gateway")?;
