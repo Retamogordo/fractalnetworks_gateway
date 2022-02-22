@@ -21,10 +21,8 @@
 //! and the gateway as a whole. Polling this endpoint is recommended. It allows
 //! for filtering traffic data by timestamp, such that only newer data is read.
 
-mod api;
 mod garbage;
 mod gateway;
-mod token;
 mod types;
 mod util;
 mod watchdog;
@@ -40,7 +38,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use structopt::StructOpt;
-use token::Token;
 use tokio::fs::File;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
@@ -87,7 +84,7 @@ pub struct Options {
 
     /// Security token used to authenticate API requests.
     #[structopt(long, short, env = "GATEWAY_TOKEN")]
-    secret: String,
+    token: String,
 
     /// Interval to run watchdog at.
     #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration::parse::parse))]
@@ -235,7 +232,7 @@ impl Options {
             traffic_broadcast,
             events,
             events_broadcast,
-            token: self.secret.clone(),
+            token: self.token.clone(),
             manager: self.manager.clone(),
         };
 
