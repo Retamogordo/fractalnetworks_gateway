@@ -32,6 +32,7 @@ mod token;
 mod types;
 mod util;
 mod watchdog;
+mod websocket;
 
 use anyhow::{anyhow, Context, Result};
 use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector, GatewayEvent};
@@ -48,6 +49,7 @@ use tokio::fs::File;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
 use url::Url;
+use tokio_tungstenite::tungstenite::handshake::client::Request;
 
 /// Broadcast queue length for traffic data.
 const BROADCAST_QUEUE_TRAFFIC: usize = 16;

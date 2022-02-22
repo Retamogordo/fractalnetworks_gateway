@@ -36,6 +36,7 @@ tonic = { version = "0.6", optional = true }
 regex = "1.5.4"
 tokio-stream = { version = "0.1.8", features = ["sync"] }
 event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features = ["broadcast"], branch = "v0.1" }
+tokio-tungstenite = "0.17.1"
 
 [features]
 default = ["grpc"]
