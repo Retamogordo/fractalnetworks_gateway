@@ -27,7 +27,7 @@ wireguard-keys = "0.1"
 regex = "1.5.4"
 tokio-stream = { version = "0.1.8", features = ["sync"] }
 event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features = ["broadcast"], branch = "v0.1" }
-tokio-tungstenite = "0.17.1"
+tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-native-roots"] }
 base32 = "0.4.0"
 tokio-util = { version = "0.7.0", features = ["codec"] }
 tokio-serde = "0.8.0"
