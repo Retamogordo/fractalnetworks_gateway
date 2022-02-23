@@ -30,7 +30,7 @@ event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features
 base32 = "0.4.0"
 tokio-util = { version = "0.7.0", features = ["codec"] }
 tokio-serde = "0.8.0"
-async-tungstenite = { version = "0.17.0", features = ["tokio-rustls-native-certs"] }
+async-tungstenite = { version = "0.16.1", features = ["tokio-rustls-native-certs"] }
 
 [features]
 default = []
