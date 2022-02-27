@@ -102,6 +102,12 @@ pub struct Options {
     /// Where to connect to get the manager
     #[structopt(long, short, env = "GATEWAY_MANAGER")]
     manager: Url,
+
+    /// Name of this gateway. Passed on to manager as part of a HTTP
+    /// header. This is used so that a single account can host multiple
+    /// gateways.
+    #[structopt(long, short, env = "GATEWAY_IDENTITY")]
+    identity: String,
 }
 
 /// Given a forwarding scheme like `https://domain.com=127.0.0.1:8000`, parse it

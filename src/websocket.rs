@@ -28,7 +28,8 @@ pub async fn connect(global: Global) {
 
 pub async fn connect_run(global: &Global) -> Result<()> {
     let request = Request::get(&global.manager.to_string())
-        .header(AUTHORIZATION, &format!("Bearer {}", global.token))
+        .header("Authorization", &format!("Bearer {}", global.token))
+        .header("Identity", &global.options.identity)
         .body(())?;
 
     let (mut socket, _response) = connect_async_with_tls_connector(request, None).await?;
