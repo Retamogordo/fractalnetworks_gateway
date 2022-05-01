@@ -23,7 +23,7 @@ futures = "0.3.21"
 url = { version = "2.2.2", features = ["serde"] }
 gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client", branch = "v0.1" }
 gateway-manager-client = { git = "https://gitlab.com/fractalnetworks/gateway-manager-client", branch = "v0.1" }
-wireguard-keys = { git = "https://gitlab.com/fractalnetworks/wireguard-keys", branch = "v0.1" }
+wireguard-keys = "0.1"
 regex = "1.5.4"
 tokio-stream = { version = "0.1.8", features = ["sync"] }
 event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features = ["broadcast"], branch = "v0.1" }
