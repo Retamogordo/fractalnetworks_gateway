@@ -32,6 +32,7 @@ use anyhow::{anyhow, Context, Result};
 use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector};
 use gateway_client::GatewayEvent;
 use gateway_client::TrafficInfo;
+use humantime::parse_duration;
 use sqlx::SqlitePool;
 use std::net::SocketAddr;
 use std::path::Path;
@@ -65,16 +66,6 @@ pub enum Command {
 /// Command-line options for running gateway (either as REST or a gRPC service).
 #[derive(StructOpt, Clone, Debug)]
 pub struct Options {
-    #[cfg(feature = "grpc")]
-    /// Enable REST API. By default, only gRPC service is started.
-    #[structopt(long, env = "GATEWAY_REST")]
-    rest: bool,
-
-    #[cfg(feature = "grpc")]
-    /// Where to listen on for incoming requests.
-    #[structopt(long, env = "GATEWAY_GRPC")]
-    grpc_listen: Option<SocketAddr>,
-
     /// What database file to use to log traffic data to.
     #[structopt(long, short, env = "GATEWAY_DATABASE")]
     database: Option<String>,
@@ -84,15 +75,15 @@ pub struct Options {
     token: String,
 
     /// Interval to run watchdog at.
-    #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration::parse::parse))]
+    #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration))]
     watchdog: Duration,
 
     /// Interval to run garbage collection at.
-    #[structopt(long, short, default_value="1h", parse(try_from_str = parse_duration::parse::parse))]
+    #[structopt(long, short, default_value="1h", parse(try_from_str = parse_duration))]
     garbage: Duration,
 
     /// Duration for which network data is retained.
-    #[structopt(long, short, default_value="24h", parse(try_from_str = parse_duration::parse::parse))]
+    #[structopt(long, short, default_value="24h", parse(try_from_str = parse_duration))]
     retention: Duration,
 
     /// Add custom HTTPS forwarding
