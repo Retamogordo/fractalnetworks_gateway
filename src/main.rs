@@ -21,7 +21,6 @@
 //! and the gateway as a whole. Polling this endpoint is recommended. It allows
 //! for filtering traffic data by timestamp, such that only newer data is read.
 
-mod garbage;
 mod gateway;
 mod types;
 mod util;
@@ -33,7 +32,6 @@ use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector};
 use gateway_client::GatewayEvent;
 use gateway_client::TrafficInfo;
 use humantime::parse_duration;
-use sqlx::SqlitePool;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::str::FromStr;
@@ -50,18 +48,6 @@ const BROADCAST_QUEUE_TRAFFIC: usize = 16;
 
 /// Broadcast queue length for events.
 const BROADCAST_QUEUE_EVENTS: usize = 16;
-
-/// Command-line options for gateway.
-#[derive(StructOpt, Clone, Debug)]
-pub enum Command {
-    /// Run gateway.
-    Run(Options),
-    /// Migrate database.
-    Migrate {
-        /// Database to migrate.
-        database: String,
-    },
-}
 
 /// Command-line options for running gateway (either as REST or a gRPC service).
 #[derive(StructOpt, Clone, Debug)]
@@ -135,10 +121,6 @@ pub struct Global {
     /// Traffic data retention.
     retention: Duration,
     garbage: Duration,
-    /// Connection to the database.
-    ///
-    /// The database is used only to store traffic data.
-    database: SqlitePool,
     /// Traffic Stream.
     traffic: EventCollector<TrafficInfo>,
     /// Broadcast queue for sending traffic data.
@@ -185,21 +167,6 @@ impl Global {
             }
         });
     }
-
-    /// launch garbage collector, which prunes old traffic stats from database
-    pub async fn garbage(&self) {
-        let database = self.database.clone();
-        let garbage = self.garbage.clone();
-        let retention = self.retention.clone();
-        tokio::spawn(async move {
-            loop {
-                match garbage::garbage(&database, garbage, retention).await {
-                    Ok(_) => {}
-                    Err(e) => log::error!("{}", e),
-                }
-            }
-        });
-    }
 }
 
 impl Options {
@@ -221,7 +188,6 @@ impl Options {
             watchdog: self.watchdog,
             retention: self.retention,
             garbage: self.garbage,
-            database: self.database().await?,
             traffic,
             traffic_broadcast,
             events,
@@ -232,55 +198,26 @@ impl Options {
 
         Ok(global)
     }
-
-    pub async fn database(&self) -> Result<SqlitePool> {
-        // create database if not exists
-        if let Some(database) = &self.database {
-            let database = Path::new(&database);
-            if !database.exists() {
-                File::create(database).await?;
-            }
-        }
-
-        let database_string = self.database.as_deref().unwrap_or_else(|| ":memory:");
-
-        // connect and migrate database
-        let pool = SqlitePool::connect(&database_string).await?;
-        sqlx::migrate!().run(&pool).await?;
-
-        Ok(pool)
-    }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::init();
-    let command = Command::from_args();
+    let options = Options::from_args();
 
-    match command {
-        Command::Migrate { database } => {
-            // migrate the database
-            let pool = SqlitePool::connect(&database).await?;
-            sqlx::migrate!().run(&pool).await?;
-            Ok(())
-        }
-        Command::Run(options) => {
-            let global = options.global().await.context("Creating global options")?;
+    let global = options.global().await.context("Creating global options")?;
 
-            global.watchdog().await;
-            global.garbage().await;
+    global.watchdog().await;
 
-            // on startup, initialize nginx and set some default options (such as
-            // special redirects passed in on the command line).
-            gateway::startup(&options)
-                .await
-                .context("Starting up gateway")?;
+    // on startup, initialize nginx and set some default options (such as
+    // special redirects passed in on the command line).
+    gateway::startup(&options)
+        .await
+        .context("Starting up gateway")?;
 
-            // connect to the websocket to get config from manager and send events
-            // and traffic data
-            websocket::connect(global).await;
+    // connect to the websocket to get config from manager and send events
+    // and traffic data
+    websocket::connect(global).await;
 
-            Ok(())
-        }
-    }
+    Ok(())
 }

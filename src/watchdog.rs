@@ -7,7 +7,6 @@ use gateway_client::{
 };
 use gateway_client::{Traffic, TrafficInfo};
 use log::*;
-use sqlx::{query, query_as, SqlitePool};
 use std::collections::{BTreeMap, HashSet};
 use std::net::SocketAddr;
 use std::time::Duration;

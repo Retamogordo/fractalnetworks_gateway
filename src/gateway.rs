@@ -10,7 +10,6 @@ use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
 use regex::Regex;
-use sqlx::{query_as, SqlitePool};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::net::Ipv4Addr;
@@ -320,28 +319,4 @@ pub async fn apply_nginx(networks: &[NetworkState], options: &Options) -> Result
     nginx_reload().await?;
 
     Ok(())
-}
-
-/// Grab traffic data from the database.
-pub async fn traffic(pool: &SqlitePool, start_time: usize) -> Result<TrafficInfo> {
-    let mut traffic_info = TrafficInfo::new(start_time);
-    let mut rows = query_as::<_, (Vec<u8>, Vec<u8>, i64, i64, i64)>(
-        "SELECT network_pubkey, device_pubkey, traffic_rx, traffic_tx, time
-            FROM gateway_traffic
-            JOIN gateway_network ON gateway_network.network_id = gateway_traffic.network_id
-            JOIN gateway_device ON gateway_device.device_id = gateway_traffic.device_id
-            WHERE time > ?",
-    )
-    .bind(start_time as i64)
-    .fetch(pool);
-
-    while let Some((network, device, rx, tx, time)) = rows.try_next().await? {
-        let traffic = Traffic::new(rx as usize, tx as usize);
-        let time = time as usize;
-        let network = Pubkey::try_from(&network[..])?;
-        let device = Pubkey::try_from(&device[..])?;
-        traffic_info.add(network, device, time, traffic);
-    }
-
-    Ok(traffic_info)
 }
