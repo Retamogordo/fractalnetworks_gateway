@@ -23,7 +23,6 @@
 
 mod gateway;
 mod types;
-mod util;
 mod watchdog;
 mod websocket;
 
@@ -118,10 +117,8 @@ pub struct Global {
     events: EventCollector<GatewayEvent>,
     /// Underlying channel that events are sent on.
     events_broadcast: Sender<GatewayEvent>,
-
     /// JWT or ApiKey used to connect to manager.
     token: String,
-
     /// Where to connect to for the manager
     manager: Url,
 }

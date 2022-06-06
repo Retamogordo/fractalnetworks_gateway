@@ -1,5 +1,4 @@
-use crate::types::*;
-use crate::util::*;
+use crate::types::NETNS_PREFIX;
 use crate::Global;
 use anyhow::{Context, Result};
 use gateway_client::{
@@ -7,6 +6,7 @@ use gateway_client::{
 };
 use gateway_client::{Traffic, TrafficInfo};
 use log::*;
+use networking_wrappers::*;
 use std::collections::{BTreeMap, HashSet};
 use std::net::SocketAddr;
 use std::time::Duration;

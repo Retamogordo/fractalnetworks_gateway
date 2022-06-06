@@ -1,5 +1,5 @@
 use crate::types::*;
-use crate::util::*;
+//use crate::util::*;
 use crate::Global;
 use crate::Options;
 use anyhow::anyhow;
@@ -9,6 +9,7 @@ use gateway_client::{GatewayConfig, NetworkState, Traffic, TrafficInfo};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
+use networking_wrappers::*;
 use regex::Regex;
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -165,7 +166,7 @@ pub async fn apply_wireguard(network: &NetworkState) -> Result<()> {
     if !wireguard_exists(&netns, &wgif).await? {
         info!("Wireguard network does not exist");
         // create wireguard config in netns
-        wireguard_create(&netns, &wgif).await?;
+        wireguard_create(Some(&netns), &wgif).await?;
     }
 
     let show = interface_show(Some(&netns), &wgif).await?;
