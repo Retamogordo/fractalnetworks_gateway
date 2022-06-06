@@ -403,6 +403,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "fractal-gateway"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-tungstenite",
+ "base32",
+ "env_logger",
+ "event-types",
+ "futures",
+ "gateway-client",
+ "gateway-manager-client",
+ "humantime",
+ "ipnet",
+ "itertools",
+ "lazy_static",
+ "log",
+ "networking-wrappers",
+ "regex",
+ "serde",
+ "serde_json",
+ "structopt",
+ "tera",
+ "thiserror",
+ "tokio",
+ "tokio-serde",
+ "tokio-stream",
+ "tokio-util",
+ "url",
+ "wireguard-keys",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -489,38 +521,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "gateway"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-tungstenite",
- "base32",
- "env_logger",
- "event-types",
- "futures",
- "gateway-client",
- "gateway-manager-client",
- "humantime",
- "ipnet",
- "itertools",
- "lazy_static",
- "log",
- "networking-wrappers",
- "regex",
- "serde",
- "serde_json",
- "structopt",
- "tera",
- "thiserror",
- "tokio",
- "tokio-serde",
- "tokio-stream",
- "tokio-util",
- "url",
- "wireguard-keys",
 ]
 
 [[package]]
