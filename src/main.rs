@@ -64,14 +64,6 @@ pub struct Options {
     #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration))]
     watchdog: Duration,
 
-    /// Interval to run garbage collection at.
-    #[structopt(long, short, default_value="1h", parse(try_from_str = parse_duration))]
-    garbage: Duration,
-
-    /// Duration for which network data is retained.
-    #[structopt(long, short, default_value="24h", parse(try_from_str = parse_duration))]
-    retention: Duration,
-
     /// Add custom HTTPS forwarding
     #[structopt(long, env = "GATEWAY_CUSTOM_FORWARDING", parse(try_from_str = parse_custom_forwarding), use_delimiter = true)]
     custom_forwarding: Vec<(Url, SocketAddr)>,
@@ -118,9 +110,6 @@ pub struct Global {
     /// The watchdog process runs on intervals and polls wireguard traffic and peer
     /// statistics and turns them into events.
     watchdog: Duration,
-    /// Traffic data retention.
-    retention: Duration,
-    garbage: Duration,
     /// Traffic Stream.
     traffic: EventCollector<TrafficInfo>,
     /// Broadcast queue for sending traffic data.
@@ -186,8 +175,6 @@ impl Options {
             iptables_lock: Arc::new(Mutex::new(())),
             options: self.clone(),
             watchdog: self.watchdog,
-            retention: self.retention,
-            garbage: self.garbage,
             traffic,
             traffic_broadcast,
             events,
