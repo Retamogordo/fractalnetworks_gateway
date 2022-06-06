@@ -1,5 +1,8 @@
 [package]
 name = "gateway-client"
+authors = ["Patrick M. Elsen <patrick@fractalnetworks.co>"]
+description = "Gateway types"
+license = "AGPL-3.0-only"
 version = "0.1.0"
 edition = "2021"
 
