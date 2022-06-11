@@ -55,11 +55,7 @@ build:amd64:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo build --release --features cli
-  artifacts:
-    paths:
-      - target/release/client
-    expire_in: 1 week
+    - cargo build --release
 
 # build for arm target
 build:arm32:
@@ -67,11 +63,7 @@ build:arm32:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo build --release --target arm-unknown-linux-gnueabihf --features cli
-  artifacts:
-    paths:
-      - target/arm-unknown-linux-gnueabihf/release/client
-    expire_in: 1 week
+    - cargo build --release --target arm-unknown-linux-gnueabihf
 
 # build for arm target
 build:arm64:
@@ -79,11 +71,7 @@ build:arm64:
   stage: build
   script:
     - ci-setup-cargo
-    - cargo build --release --target aarch64-unknown-linux-gnu --features cli
-  artifacts:
-    paths:
-      - target/aarch64-unknown-linux-gnu/release/client
-    expire_in: 1 week
+    - cargo build --release --target aarch64-unknown-linux-gnu
 
 # generate rust html documentation
 rustdoc:
@@ -102,19 +90,10 @@ pages:
   image: registry.gitlab.com/fractalnetworks/images/pages:v1
   stage: deploy
   dependencies:
-    - build:amd64
-    - build:arm64
-    - build:arm32
     - rustdoc
   script:
     - mkdir public
     - mv target/doc public/doc
-    - mv target/release/client public/gateway-client-amd64
-    - sign public/gateway-client-amd64
-    - mv target/arm-unknown-linux-gnueabihf/release/client public/gateway-client-arm32
-    - sign public/gateway-client-arm32
-    - mv target/aarch64-unknown-linux-gnu/release/client public/gateway-client-arm64
-    - sign public/gateway-client-arm64
   artifacts:
     paths:
       - public
