@@ -8,15 +8,13 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.38"
-ipnet = { version = "2.3.0", features = ["serde", "schemars"] }
-log = "0.4.14"
+ipnet = { version = "2.5.0", features = ["serde"] }
 serde = { version = "1.0.124", features = ["derive"] }
 thiserror = "1.0.30"
 url = { version = "2.2.1", features = ["serde"] }
-wireguard-keys = { version = "0.1", features = ["schema"] }
+wireguard-keys = { version = "0.1" }
 schemars = { version = "0.8.8", optional = true }
-futures = "0.3.19"
 
 [features]
 default = []
-schema = ["schemars", "wireguard-keys/schema"]
+schema = ["schemars", "wireguard-keys/schema", "ipnet/schemars"]
