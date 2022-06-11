@@ -9,4 +9,4 @@ while [ ! -f /run/nginx.pid ]; do
 done
 
 # launch gateway (will create database if not exists).
-fractal-gateway ${@:-run}
+fractal-gateway "$@"

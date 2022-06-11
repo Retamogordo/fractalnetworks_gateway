@@ -1,0 +1,15 @@
+version: "3.3"
+services:
+  gateway:
+    image: registry.gitlab.com/fractalnetworks/gateway:$GATEWAY_VERSION
+    environment:
+      GATEWAY_TOKEN: $GATEWAY_TOKEN
+      GATEWAY_IDENTITY: $GATEWAY_IDENTITY
+      GATEWAY_MANAGER: http://integration:8000
+  integration:
+    build:
+      context: ..
+      dockerfile: integration/Dockerfile
+    environment:
+      INTEGRATION_LISTEN: 0.0.0.0:8000
+
