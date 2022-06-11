@@ -96,21 +96,6 @@ impl DerefMut for GatewayConfigPartial {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum GatewayRequests {
-    /// Apply an entire configuration state to the gateway
-    Config(GatewayConfig),
-    /// Apply a partial configuration state to the gateway
-    ConfigPartial(GatewayConfigPartial),
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum GatewayResponses {
-    Traffic(TrafficInfo),
-    Event(String),
-    Error(String),
-}
-
 /// Default MTU for WireGuard networks.
 fn default_mtu() -> usize {
     1420
@@ -123,6 +108,8 @@ pub enum GatewayRequest {
     Apply(GatewayConfig),
     /// Apply partial config to gateway
     ApplyPartial(GatewayConfigPartial),
+    /// Shut gateway down.
+    Shutdown,
 }
 
 /// Responses sent back out by gateway
