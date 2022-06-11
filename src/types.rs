@@ -5,7 +5,6 @@ use ipnet::{IpAdd, IpNet, Ipv4Net};
 use itertools::Itertools;
 use log::*;
 use serde::{Deserialize, Serialize};
-
 use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
@@ -216,11 +215,11 @@ impl Forwarding {
 
 #[derive(Clone, Debug)]
 pub struct NetworkStats {
-    private_key: Privkey,
+    pub private_key: Privkey,
     pub public_key: Pubkey,
     pub listen_port: u16,
-    fwmark: Option<u16>,
-    peers: Vec<PeerStats>,
+    pub fwmark: Option<u16>,
+    pub peers: Vec<PeerStats>,
 }
 
 impl FromStr for NetworkStats {

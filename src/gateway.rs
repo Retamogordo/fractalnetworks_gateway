@@ -1,11 +1,9 @@
 use crate::types::*;
-//use crate::util::*;
 use crate::Global;
 use crate::Options;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
-use futures::TryStreamExt;
-use gateway_client::{GatewayConfig, NetworkState, Traffic, TrafficInfo};
+use gateway_client::{GatewayConfig, NetworkState};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
@@ -16,7 +14,6 @@ use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::path::Path;
 use tera::Tera;
-use wireguard_keys::Pubkey;
 
 /// Name of the bride network interface to use
 const BRIDGE_INTERFACE: &'static str = "ensbr0";

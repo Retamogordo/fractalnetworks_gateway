@@ -1,9 +1,7 @@
 use crate::Global;
 use anyhow::Result;
 use async_tungstenite::tokio::*;
-use async_tungstenite::tungstenite::client::IntoClientRequest;
 use async_tungstenite::tungstenite::handshake::client::Request;
-use async_tungstenite::tungstenite::http::header::AUTHORIZATION;
 use async_tungstenite::tungstenite::Message;
 use futures::{SinkExt, StreamExt};
 use gateway_client::{GatewayRequest, GatewayResponse};
@@ -48,7 +46,7 @@ pub async fn connect_run(global: &Global) -> Result<()> {
                             GatewayRequest::Apply(config) => {
                                 crate::gateway::apply(global, &config).await?;
                             },
-                            GatewayRequest::ApplyPartial(config) => {
+                            GatewayRequest::ApplyPartial(_config) => {
                             },
                         }
                     }

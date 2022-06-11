@@ -8,10 +8,8 @@ use gateway_client::{Traffic, TrafficInfo};
 use log::*;
 use networking_wrappers::*;
 use std::collections::{BTreeMap, HashSet};
-use std::net::SocketAddr;
-use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
-use wireguard_keys::{Privkey, Pubkey};
+use std::time::SystemTime;
+use wireguard_keys::Pubkey;
 
 /// Minimum amount of traffic to be recorded. This exists because we don't
 /// need to store a traffic entry if no traffic has occured. But because of
@@ -65,7 +63,7 @@ pub async fn watchdog_netns(
         .context("Fetching wireguard stats")?;
 
     // if not exists, create and fetch cache for this wireguard network
-    let mut entry = cache
+    let entry = cache
         .entry(stats.listen_port())
         .or_insert_with(|| BTreeMap::new());
 

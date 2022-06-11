@@ -32,13 +32,11 @@ use gateway_client::GatewayEvent;
 use gateway_client::TrafficInfo;
 use humantime::parse_duration;
 use std::net::SocketAddr;
-use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use structopt::StructOpt;
-use tokio::fs::File;
-use tokio::sync::broadcast::{channel, Receiver, Sender};
+use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
 use url::Url;
 
@@ -51,10 +49,6 @@ const BROADCAST_QUEUE_EVENTS: usize = 16;
 /// Command-line options for running gateway (either as REST or a gRPC service).
 #[derive(StructOpt, Clone, Debug)]
 pub struct Options {
-    /// What database file to use to log traffic data to.
-    #[structopt(long, short, env = "GATEWAY_DATABASE")]
-    database: Option<String>,
-
     /// Security token used to authenticate API requests.
     #[structopt(long, short, env = "GATEWAY_TOKEN")]
     token: String,
