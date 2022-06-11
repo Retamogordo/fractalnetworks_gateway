@@ -1,43 +1,40 @@
 CARGO=cargo
 DOCKER=docker
 IMAGE_NAME=registry.gitlab.com/fractalnetworks/gateway
-IMAGE_TAG=latest
-GATEWAY_DATABASE=/tmp/gateway.db
-GATEWAY_ADDRESS=127.0.0.1
-GATEWAY_PORT=8000
-GATEWAY_TOKEN=supersecret
+IMAGE_TAG=local
 ARCH=amd64
+BUILD_TYPE=debug
 
-release:
+# build in release mode
+target/release/fractal-gateway:
 	$(CARGO) build --release
 
-debug:
+# build in debug mode
+target/debug/fractal-gateway:
 	$(CARGO) build
 
-openapi:
-	$(DOCKER) run -it --rm -v $(shell pwd):/data openapitools/openapi-generator-cli generate -i /data/api/gateway_0.1.0.yaml -g html2 -o /data/target/openapi
-	$(DOCKER) run -it --rm -v $(shell pwd):/data openapitools/openapi-generator-cli generate -i /data/api/gateway_0.1.0.yaml -g openapi -o /data/target/openapi
-
+# build documentation, output in target/doc
 doc:
 	$(CARGO) doc
 
+# build and run tests
 test:
 	$(CARGO) test
 
-run: release
-	@touch $(GATEWAY_DATABASE)
-	RUST_LOG=info,sqlx=warn RUST_BACKTRACE=1 ROCKET_ADDRESS=$(GATEWAY_ADDRESS) ROCKET_PORT=$(GATEWAY_PORT) sudo $(CARGO) run --release -- --database $(GATEWAY_DATABASE) --secret $(GATEWAY_TOKEN)
-
+# install runtime dependencies
 deps:
 	sudo apt update
 	sudo apt install -y wireguard-tools iptables nginx iproute2
 
-docker:
-	$(DOCKER) build . -t $(IMAGE_NAME):$(IMAGE_TAG)
+# build docker container, set BUILD_TYPE to "debug" or "release"
+docker: target/$(BUILD_TYPE)/fractal-gateway
+	$(DOCKER) build . --build-arg BUILD_TYPE=$(BUILD_TYPE) -t $(IMAGE_NAME):$(IMAGE_TAG)
 
+# push docker container to gitlab
 docker-push:
 	$(DOCKER) push $(IMAGE_NAME):$(IMAGE_TAG)
 
+# run docker container
 docker-run:
 	-$(DOCKER) network create fractal
 	$(DOCKER) run --network fractal --name gateway -it --privileged --rm -p 8000:8000 -p 80:80 -p 443:443 gateway
