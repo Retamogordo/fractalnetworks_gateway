@@ -1,5 +1,5 @@
 use crate::Global;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_tungstenite::tokio::*;
 use async_tungstenite::tungstenite::handshake::client::Request;
 use async_tungstenite::tungstenite::Message;
@@ -15,7 +15,7 @@ pub async fn connect(global: Global) {
     loop {
         // try connecting to websocket
         match connect_run(&global).await {
-            Ok(()) => {}
+            Ok(()) => break,
             Err(e) => error!("Error connecting to websocket: {}", e),
         };
 
@@ -45,12 +45,19 @@ pub async fn connect_run(global: &Global) -> Result<()> {
                         match message {
                             GatewayRequest::Apply(config) => {
                                 crate::gateway::apply(global, &config).await?;
+                                socket.send(Message::Text(serde_json::to_string(&GatewayResponse::Apply(Ok(String::new())))?)).await?;
                             },
                             GatewayRequest::ApplyPartial(_config) => {
                             },
+                            GatewayRequest::Shutdown => {
+                                error!("Received Shutdown message, shutting down");
+                                break;
+                            }
                         }
                     }
-                    _ => break,
+                    Some(Ok(_)) => {}
+                    Some(Err(error)) => return Err(error.into()),
+                    None => return Err(anyhow!("Server closed WebSocket stream")),
                 }
             },
             traffic = traffic_sub.recv() => {

@@ -20,7 +20,7 @@ lazy_static = "1.4.0"
 tera = "1.15.0"
 futures = "0.3.21"
 url = { version = "2.2.2", features = ["serde"] }
-gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client", version = "0.1.1", tag = "v0.1.1" }
+gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client" }
 networking-wrappers = { git = "https://gitlab.com/fractalnetworks/networking-wrappers", branch = "main" }
 wireguard-keys = "0.1"
 regex = "1.5.4"
@@ -28,6 +28,7 @@ event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features
 base32 = "0.4.0"
 async-tungstenite = { version = "0.16.1", features = ["tokio-rustls-native-certs"] }
 humantime = "2.1.0"
+rand = "0.8.5"
 
 [features]
 default = []

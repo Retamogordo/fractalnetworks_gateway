@@ -5,11 +5,14 @@ services:
     environment:
       GATEWAY_TOKEN: $GATEWAY_TOKEN
       GATEWAY_IDENTITY: $GATEWAY_IDENTITY
-      GATEWAY_MANAGER: http://integration:8000
+      GATEWAY_MANAGER: ws://integration:8000
+      RUST_LOG: debug
+    privileged: true
   integration:
     build:
       context: ..
       dockerfile: integration/Dockerfile
     environment:
       INTEGRATION_LISTEN: 0.0.0.0:8000
+      RUST_LOG: debug
 

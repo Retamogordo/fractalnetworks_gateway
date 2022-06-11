@@ -1,5 +1,5 @@
 /target
 !/target/release/fractal-gateway
 !/target/debug/fractal-gateway
-!/target/release/integration
-!/target/debug/integration
+!/target/release/fractal-gateway-integration
+!/target/debug/fractal-gateway-integration
