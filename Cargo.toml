@@ -21,17 +21,16 @@ tera = "1.15.0"
 futures = "0.3.21"
 url = { version = "2.2.2", features = ["serde"] }
 gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client", version = "0.1.1", tag = "v0.1.1" }
-gateway-manager-client = { git = "https://gitlab.com/fractalnetworks/gateway-manager-client", branch = "v0.1" }
 networking-wrappers = { git = "https://gitlab.com/fractalnetworks/networking-wrappers", branch = "main" }
 wireguard-keys = "0.1"
 regex = "1.5.4"
-tokio-stream = { version = "0.1.8", features = ["sync"] }
 event-types = { git = "https://gitlab.com/fractalnetworks/event-types", features = ["broadcast"], branch = "v0.1" }
 base32 = "0.4.0"
-tokio-util = { version = "0.7.0", features = ["codec"] }
-tokio-serde = "0.8.0"
 async-tungstenite = { version = "0.16.1", features = ["tokio-rustls-native-certs"] }
 humantime = "2.1.0"
 
 [features]
 default = []
+
+[workspace]
+members = [".", "integration"]
