@@ -9,7 +9,7 @@ use std::net::SocketAddr;
 use std::ops::Range;
 use structopt::StructOpt;
 use tokio::net::{TcpListener, TcpStream};
-use tokio_tungstenite::{accept_async, tungstenite::protocol::Message};
+use tokio_tungstenite::{accept_async, tungstenite::protocol::Message, WebSocketStream};
 use wireguard_keys::{Privkey, Pubkey, Secret};
 
 #[derive(StructOpt, Clone, Debug)]
@@ -64,6 +64,52 @@ fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
     config
 }
 
+async fn apply_config(
+    websocket: &mut WebSocketStream<TcpStream>,
+    config: GatewayConfig,
+) -> Result<Result<String, String>> {
+    websocket
+        .send(Message::Text(serde_json::to_string(
+            &GatewayRequest::Apply(config),
+        )?))
+        .await?;
+    while let Some(Ok(message)) = websocket.next().await {
+        match message {
+            Message::Text(value) => {
+                let value = serde_json::from_str(&value)?;
+                match value {
+                    GatewayResponse::Apply(status) => {
+                        return Ok(status);
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+    Err(anyhow!("Missing apply config response"))
+}
+
+async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
+    info!("Applying empty config");
+    let response = apply_config(websocket, Default::default()).await?;
+    assert!(response.is_ok());
+
+    info!("Applying config with 10 networks");
+    let response = apply_config(websocket, generate_config(10, 0..3)).await?;
+    assert!(response.is_ok());
+
+    info!("Applying config with 100 networks");
+    let response = apply_config(websocket, generate_config(100, 0..3)).await?;
+    assert!(response.is_ok());
+
+    info!("Applying empty config");
+    let response = apply_config(websocket, Default::default()).await?;
+    assert!(response.is_ok());
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::init();
@@ -73,36 +119,12 @@ async fn main() -> Result<()> {
     info!("Got gateway connection from {addr}");
     let mut websocket = accept_async(stream).await?;
 
-    //
-    info!("Applying empty config");
-    websocket
-        .send(Message::Text(serde_json::to_string(
-            &GatewayRequest::Apply(Default::default()),
-        )?))
-        .await?;
-    let event = websocket.next().await.unwrap()?;
-
-    info!("Applying config with 10 networks");
-    websocket
-        .send(Message::Text(serde_json::to_string(
-            &GatewayRequest::Apply(generate_config(10, 0..3)),
-        )?))
-        .await?;
-    let event = websocket.next().await.unwrap()?;
-
-    info!("Applying config with 100 networks");
-    websocket
-        .send(Message::Text(serde_json::to_string(
-            &GatewayRequest::Apply(generate_config(100, 0..3)),
-        )?))
-        .await?;
-    let event = websocket.next().await.unwrap()?;
-
-    websocket
+    let result = run_tests(&mut websocket).await;
+    let _ = websocket
         .send(Message::Text(serde_json::to_string(
             &GatewayRequest::Shutdown,
         )?))
-        .await?;
+        .await;
 
-    Ok(())
+    result
 }
