@@ -8,7 +8,7 @@ ENV RUST_BACKTRACE=1
 
 # install dependencies
 RUN apt update && \
-    apt install -y --no-install-recommends iptables iproute2 wireguard-tools nginx ca-certificates && \
+    DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends iptables iproute2 wireguard-tools nginx ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # copy entrypoint and binary
