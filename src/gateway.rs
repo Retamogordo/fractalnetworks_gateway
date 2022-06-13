@@ -98,13 +98,9 @@ pub async fn apply(global: &Global, config: &GatewayConfig) -> Result<String> {
         }
     }
 
-    // for the rest, apply config
-    let mut apply_network_futures = vec![];
     for network in &state {
-        apply_network_futures.push(apply_network(global, network));
+        apply_network(global, network).await?;
     }
-
-    futures::future::try_join_all(apply_network_futures).await?;
 
     apply_nginx(&state, global.options())
         .await

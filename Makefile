@@ -48,3 +48,5 @@ get-release-artifact:
 
 setup-git:
 	git config --global url."ssh://git@gitlab.com".insteadOf "https://gitlab.com"
+
+.PHONY: target/debug/fractal-gateway target/release/fractal-gateway
