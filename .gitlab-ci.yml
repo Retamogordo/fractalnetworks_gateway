@@ -59,10 +59,11 @@ build:amd64:
   stage: build
   script:
     - source ci-setup-cargo
-    - cargo build --release
+    - cargo build --release --all
   artifacts:
     paths:
       - target/release/$RUST_BINARY
+      - target/release/$RUST_BINARY-integration
     expire_in: 1 week
   interruptible: true
 
@@ -114,7 +115,11 @@ docker:
   services:
     - docker:dind
   script:
-    - ci-docker-build-push
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build . -t $CI_REGISTRY_IMAGE:local
+    - for tag in `ci-docker-tags`; do docker build . -t $CI_REGISTRY_IMAGE:$tag; done
+    - cd integration && docker-compose --env-file local.env up
+    - for tag in `ci-docker-tags`; do docker push $CI_REGISTRY_IMAGE:$tag; done
   rules:
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_BRANCH
