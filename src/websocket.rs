@@ -44,10 +44,18 @@ pub async fn connect_run(global: &Global) -> Result<()> {
                         let message: GatewayRequest = from_str(&text)?;
                         match message {
                             GatewayRequest::Apply(config) => {
-                                crate::gateway::apply(global, &config).await?;
-                                socket.send(Message::Text(serde_json::to_string(&GatewayResponse::Apply(Ok(String::new())))?)).await?;
+                                let result = match crate::gateway::apply(global, &config).await {
+                                    Ok(()) => Ok("".to_string()),
+                                    Err(e) => Err(e.to_string()),
+                                };
+                                socket.send(Message::Text(serde_json::to_string(&GatewayResponse::Apply(result))?)).await?;
                             },
-                            GatewayRequest::ApplyPartial(_config) => {
+                            GatewayRequest::ApplyPartial(config) => {
+                                let result = match crate::gateway::apply_partial(global, &config).await {
+                                    Ok(()) => Ok("".to_string()),
+                                    Err(e) => Err(e.to_string()),
+                                };
+                                socket.send(Message::Text(serde_json::to_string(&GatewayResponse::Apply(result))?)).await?;
                             },
                             GatewayRequest::Shutdown => {
                                 error!("Received Shutdown message, shutting down");
