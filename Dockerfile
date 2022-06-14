@@ -1,10 +1,7 @@
-FROM ubuntu:20.04
+FROM debian:11
 
 ARG BUILD_TYPE=release
-ENV GATEWAY_TOKEN=abc
-ENV GATEWAY_MANAGER=https://api.staging.fractalnetworks.co/manager/us/gateway
 ENV RUST_LOG=info
-ENV RUST_BACKTRACE=1
 
 # install dependencies
 RUN apt update && \
