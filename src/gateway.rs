@@ -252,8 +252,9 @@ pub async fn apply_addr(netns: Option<&str>, interface: &str, target: &[IpNet]) 
 /// Make sure that an interface in a given network namespace (or in the root
 /// namespace if none is supplied) is not DOWN.
 pub async fn apply_interface_up(netns: Option<&str>, interface: &str) -> Result<()> {
-    if interface_down(netns, interface).await? {
-        interface_set_up(netns, interface).await?;
+    let status = interface_show(netns, interface).await?;
+    if status.is_down() {
+        interface_up(netns, interface).await?;
     }
     Ok(())
 }

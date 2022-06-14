@@ -773,7 +773,7 @@ dependencies = [
 [[package]]
 name = "networking-wrappers"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/networking-wrappers?branch=main#3f5d649ae15942fa185a32b5dce3d0a69c32436a"
+source = "git+https://gitlab.com/fractalnetworks/networking-wrappers?branch=main#77f02bb6cd01eb4fb63fcf7807672652e15c8847"
 dependencies = [
  "anyhow",
  "ipnet",
