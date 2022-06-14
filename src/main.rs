@@ -1,5 +1,5 @@
-use fractal_gateway::*;
 use anyhow::{Context, Result};
+use fractal_gateway::*;
 use structopt::StructOpt;
 
 #[tokio::main]

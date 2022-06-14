@@ -28,6 +28,7 @@ pub mod websocket;
 
 use anyhow::{anyhow, Context, Result};
 use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector};
+use gateway_client::GatewayConfig;
 use gateway_client::GatewayEvent;
 use gateway_client::TrafficInfo;
 use humantime::parse_duration;
@@ -91,7 +92,7 @@ pub struct Global {
     /// Config application lock.
     ///
     /// This lock is held while a new configuration is being applied.
-    lock: Arc<Mutex<()>>,
+    lock: Arc<Mutex<GatewayConfig>>,
     /// IPtables application lock.
     ///
     /// IPtables rules cannot be applied simultaneously.
@@ -118,7 +119,7 @@ pub struct Global {
 }
 
 impl Global {
-    pub fn lock(&self) -> &Mutex<()> {
+    pub fn lock(&self) -> &Mutex<GatewayConfig> {
         &self.lock
     }
 
@@ -162,7 +163,7 @@ impl Options {
         events.emitter(BroadcastEmitter::new(events_broadcast.clone()));
 
         let global = Global {
-            lock: Arc::new(Mutex::new(())),
+            lock: Arc::new(Mutex::new(Default::default())),
             iptables_lock: Arc::new(Mutex::new(())),
             options: self.clone(),
             watchdog: self.watchdog,

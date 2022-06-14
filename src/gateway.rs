@@ -3,7 +3,7 @@ use crate::Global;
 use crate::Options;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
-use gateway_client::{GatewayConfig, NetworkState};
+use gateway_client::{GatewayConfig, GatewayConfigPartial, NetworkState};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;
@@ -60,8 +60,10 @@ pub async fn startup(options: &Options) -> Result<()> {
 
 /// Given a new state, do whatever needs to be done to get the system in that
 /// state.
-pub async fn apply(global: &Global, config: &GatewayConfig) -> Result<String> {
+pub async fn apply(global: &Global, config: &GatewayConfig) -> Result<()> {
     info!("Applying new state");
+    let mut state = global.lock().lock().await;
+    *state = config.clone();
 
     // turn config into list of network states
     let state: Vec<NetworkState> = config
@@ -106,7 +108,49 @@ pub async fn apply(global: &Global, config: &GatewayConfig) -> Result<String> {
         .await
         .context("Applying nginx configuration")?;
 
-    Ok("success".to_string())
+    Ok(())
+}
+
+/// Apply a partial config, this is only a diff.
+pub async fn apply_partial(global: &Global, config: &GatewayConfigPartial) -> Result<()> {
+    info!("Applying new partial state");
+    let mut state = global.lock().lock().await;
+
+    // set up bridge
+    apply_bridge(BRIDGE_INTERFACE, &vec![(*BRIDGE_NET).into()])
+        .await
+        .context("Creating bridge interface")?;
+
+    // find out which netns exist right now
+    let netns_list: HashSet<String> = netns_list()
+        .await?
+        .into_iter()
+        .map(|netns| netns.name)
+        .collect();
+
+    for (port, config) in config.iter() {
+        match config {
+            None => {
+                state.remove(port);
+                let netns = format!("{NETNS_PREFIX}{port}");
+                if netns_list.contains(&netns) {
+                    netns_del(&netns).await?;
+                }
+            }
+            Some(network) => {
+                apply_network(global, network).await?;
+                state.insert(*port, network.clone());
+            }
+        }
+    }
+
+    let networks: Vec<_> = state.iter().map(|(_port, state)| state.clone()).collect();
+
+    apply_nginx(&networks, global.options())
+        .await
+        .context("Applying nginx configuration")?;
+
+    Ok(())
 }
 
 /// Make sure the bridge interface exists, is up and has a certain address
