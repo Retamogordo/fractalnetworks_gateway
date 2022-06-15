@@ -530,7 +530,7 @@ dependencies = [
 [[package]]
 name = "gateway-client"
 version = "0.1.1"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#8b7f5281aa43e523460f0f24bed629a9666134fe"
+source = "git+https://gitlab.com/fractalnetworks/gateway-client#25c5ceaaa6229340dec4d455da5f7715adb5d8fd"
 dependencies = [
  "anyhow",
  "ipnet",

@@ -67,8 +67,8 @@ fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
 fn generate_partial_config(size: usize, peers: Range<usize>) -> GatewayConfigPartial {
     let mut config = GatewayConfigPartial::default();
 
-    for (port, network) in generate_config(size, peers).iter() {
-        config.insert(*port, Some(network.clone()));
+    for (port, network) in generate_config(size, peers).into_inner().into_iter() {
+        config.insert(port, Some(network));
     }
 
     config
@@ -130,15 +130,20 @@ async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
     let response = apply_config(websocket, Default::default()).await?;
     assert!(response.is_ok());
 
+    let mut config = GatewayConfig::default();
+
     for _ in 0..10 {
+        config = generate_config(10, 0..3);
         info!("Applying config with 10 networks");
-        let response = apply_config(websocket, generate_config(10, 0..3)).await?;
+        let response = apply_config(websocket, config.clone()).await?;
         assert!(response.is_ok());
     }
 
     for _ in 0..10 {
+        let partial_config = generate_partial_config(10, 0..3);
+        config.apply_partial(&partial_config);
         info!("Applying partial config with 10 networks");
-        let response = apply_partial_config(websocket, generate_partial_config(10, 0..3)).await?;
+        let response = apply_partial_config(websocket, partial_config).await?;
         assert!(response.is_ok());
     }
 
