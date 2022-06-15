@@ -64,6 +64,16 @@ fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
     config
 }
 
+fn generate_partial_config(size: usize, peers: Range<usize>) -> GatewayConfigPartial {
+    let mut config = GatewayConfigPartial::default();
+
+    for (port, network) in generate_config(size, peers).iter() {
+        config.insert(*port, Some(network.clone()));
+    }
+
+    config
+}
+
 async fn apply_config(
     websocket: &mut WebSocketStream<TcpStream>,
     config: GatewayConfig,
@@ -90,6 +100,31 @@ async fn apply_config(
     Err(anyhow!("Missing apply config response"))
 }
 
+async fn apply_partial_config(
+    websocket: &mut WebSocketStream<TcpStream>,
+    config: GatewayConfigPartial,
+) -> Result<Result<String, String>> {
+    websocket
+        .send(Message::Text(serde_json::to_string(
+            &GatewayRequest::ApplyPartial(config),
+        )?))
+        .await?;
+    while let Some(Ok(message)) = websocket.next().await {
+        match message {
+            Message::Text(value) => {
+                let value = serde_json::from_str(&value)?;
+                match value {
+                    GatewayResponse::Apply(status) => {
+                        return Ok(status);
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+    Err(anyhow!("Missing apply config response"))
+}
 async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
     info!("Applying empty config");
     let response = apply_config(websocket, Default::default()).await?;
@@ -98,6 +133,12 @@ async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
     for _ in 0..10 {
         info!("Applying config with 10 networks");
         let response = apply_config(websocket, generate_config(10, 0..3)).await?;
+        assert!(response.is_ok());
+    }
+
+    for _ in 0..10 {
+        info!("Applying partial config with 10 networks");
+        let response = apply_partial_config(websocket, generate_partial_config(10, 0..3)).await?;
         assert!(response.is_ok());
     }
 
