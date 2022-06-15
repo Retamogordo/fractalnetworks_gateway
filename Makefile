@@ -41,7 +41,7 @@ docker-run:
 
 integration: docker
 	$(CARGO) build --package fractal-gateway-integration --release
-	cd integration && docker-compose --env-file local.env up --build
+	cd integration && docker-compose --env-file local.env up --build --force-recreate
 
 get-release-artifact:
 	./scripts/get-release-artifact.sh $(ARCH)
