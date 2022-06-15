@@ -430,6 +430,7 @@ dependencies = [
  "gateway-client",
  "ipnet",
  "log",
+ "networking-wrappers",
  "rand",
  "serde_json",
  "structopt",

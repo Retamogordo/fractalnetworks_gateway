@@ -1,14 +1,17 @@
 use anyhow::{anyhow, Result};
 use futures::{SinkExt, StreamExt};
 use gateway_client::*;
-use ipnet::{IpAdd, IpNet};
+use ipnet::{IpAdd, IpNet, Ipv4Net};
 use log::info;
+use networking_wrappers::*;
 use rand::{thread_rng, Rng};
-use std::net::IpAddr;
-use std::net::SocketAddr;
+use std::collections::BTreeMap;
+use std::net::{IpAddr, SocketAddr};
 use std::ops::Range;
+use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::net::{TcpListener, TcpStream};
+use tokio::process::Command;
 use tokio_tungstenite::{accept_async, tungstenite::protocol::Message, WebSocketStream};
 use wireguard_keys::{Privkey, Pubkey, Secret};
 
@@ -21,12 +24,24 @@ pub struct Options {
         env = "INTEGRATION_LISTEN"
     )]
     listen: SocketAddr,
+
+    #[structopt(
+        long,
+        short,
+        default_value = "gateway:8000",
+        env = "INTEGRATION_GATEWAY"
+    )]
+    gateway: String,
 }
 
 const PORT_RANGE: Range<u16> = 50000..60000;
 const NETWORK_MTU: usize = 1420;
 
-fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
+fn generate_config(
+    size: usize,
+    peers: Range<usize>,
+    peer_keys: &mut BTreeMap<Pubkey, Privkey>,
+) -> GatewayConfig {
     let mut config = GatewayConfig::default();
     let mut rng = thread_rng();
 
@@ -48,8 +63,11 @@ fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
                 IpAddr::V6(ipv6) => IpAddr::V6(ipv6.saturating_add(1 + n as u128)),
             };
             let address = IpNet::new(address, 32).unwrap();
+            let privkey = Privkey::generate();
+            let pubkey = privkey.pubkey();
+            peer_keys.insert(pubkey.clone(), privkey);
             network.peers.insert(
-                Privkey::generate().pubkey(),
+                pubkey,
                 PeerState {
                     allowed_ips: vec![address],
                     endpoint: None,
@@ -64,10 +82,17 @@ fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
     config
 }
 
-fn generate_partial_config(size: usize, peers: Range<usize>) -> GatewayConfigPartial {
+fn generate_partial_config(
+    size: usize,
+    peers: Range<usize>,
+    peer_keys: &mut BTreeMap<Pubkey, Privkey>,
+) -> GatewayConfigPartial {
     let mut config = GatewayConfigPartial::default();
 
-    for (port, network) in generate_config(size, peers).into_inner().into_iter() {
+    for (port, network) in generate_config(size, peers, peer_keys)
+        .into_inner()
+        .into_iter()
+    {
         config.insert(port, Some(network));
     }
 
@@ -125,26 +150,34 @@ async fn apply_partial_config(
     }
     Err(anyhow!("Missing apply config response"))
 }
-async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
+
+async fn run_tests(global: &Global, websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
     info!("Applying empty config");
     let response = apply_config(websocket, Default::default()).await?;
     assert!(response.is_ok());
 
+    let mut peer_keys = BTreeMap::new();
     let mut config = GatewayConfig::default();
 
-    for _ in 0..10 {
-        config = generate_config(10, 0..3);
+    for _ in 0..3 {
         info!("Applying config with 10 networks");
+        config = generate_config(10, 0..3, &mut peer_keys);
         let response = apply_config(websocket, config.clone()).await?;
         assert!(response.is_ok());
+
+        // make sure config is correct
+        verify_config(global, &config, &peer_keys).await?;
     }
 
-    for _ in 0..10 {
-        let partial_config = generate_partial_config(10, 0..3);
-        config.apply_partial(&partial_config);
+    for _ in 0..3 {
         info!("Applying partial config with 10 networks");
+        let partial_config = generate_partial_config(10, 0..3, &mut peer_keys);
+        config.apply_partial(&partial_config);
         let response = apply_partial_config(websocket, partial_config).await?;
         assert!(response.is_ok());
+
+        // make sure config is correct
+        verify_config(global, &config, &peer_keys).await?;
     }
 
     info!("Applying empty config");
@@ -154,16 +187,90 @@ async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
     Ok(())
 }
 
+pub const IP_PATH: &'static str = "ip";
+pub const PING_PATH: &'static str = "ping";
+async fn ping_host(netns: &str, host: IpAddr) -> Result<()> {
+    let output = Command::new(IP_PATH)
+        .arg("netns")
+        .arg("exec")
+        .arg(netns)
+        .arg(PING_PATH)
+        .arg("-f")
+        .arg("-c")
+        .arg("4")
+        .arg(host.to_string())
+        .stderr(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .output()
+        .await?;
+    match output.status.success() {
+        true => Ok(()),
+        false => Err(anyhow!("Error pinging {host} in {netns}: {output:?}")),
+    }
+}
+
+async fn verify_config(
+    global: &Global,
+    config: &GatewayConfig,
+    peer_keys: &BTreeMap<Pubkey, Privkey>,
+) -> Result<()> {
+    for (port, network) in config.iter() {
+        for (pubkey, peer) in network.peers.iter() {
+            let netns = format!("network-{port}-{}", pubkey.to_hex());
+            netns_add(&netns).await?;
+            wireguard_create(Some(&netns), "wg0").await?;
+            interface_up(Some(&netns), "wg0").await?;
+            let addr = match peer.allowed_ips[0] {
+                IpNet::V4(ipv4net) => IpNet::V4(Ipv4Net::new(ipv4net.addr(), 8)?),
+                _ => unreachable!(),
+            };
+            addr_add(Some(&netns), "wg0", addr).await?;
+            let config = [
+                format!("[Interface]"),
+                format!("PrivateKey = {}", peer_keys.get(pubkey).unwrap()),
+                String::new(),
+                format!("[Peer]"),
+                format!("PublicKey = {}", network.private_key.pubkey()),
+                format!("Endpoint = {}:{port}", global.gateway),
+                format!("AllowedIPs = {}", network.address[0]),
+                format!("PersistentKeepalive = 25"),
+            ]
+            .join("\n");
+            netns_write_file(&netns, &PathBuf::from("wireguard/wg0.conf"), &config).await?;
+            wireguard_syncconf(&netns, "wg0").await?;
+            ping_host(&netns, network.address[0].addr()).await?;
+            netns_del(&netns).await?;
+        }
+    }
+    Ok(())
+}
+
+struct Global {
+    options: Options,
+    gateway: IpAddr,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::init();
     let options = Options::from_args();
+
+    let global = Global {
+        options: options.clone(),
+        gateway: tokio::net::lookup_host(&options.gateway)
+            .await?
+            .next()
+            .unwrap()
+            .ip(),
+    };
+
     let socket = TcpListener::bind(&options.listen).await?;
     let (stream, addr) = socket.accept().await?;
     info!("Got gateway connection from {addr}");
     let mut websocket = accept_async(stream).await?;
 
-    let result = run_tests(&mut websocket).await;
+    let result = run_tests(&global, &mut websocket).await;
+    info!("Test result: {result:?}");
     let _ = websocket
         .send(Message::Text(serde_json::to_string(
             &GatewayRequest::Shutdown,
