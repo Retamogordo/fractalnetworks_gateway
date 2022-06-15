@@ -76,11 +76,32 @@ impl DerefMut for GatewayConfig {
     }
 }
 
+impl GatewayConfig {
+    pub fn into_inner(self) -> BTreeMap<u16, NetworkState> {
+        self.0
+    }
+
+    pub fn apply_partial(&mut self, partial: &GatewayConfigPartial) {
+        for (port, network) in partial.iter() {
+            match network {
+                None => self.remove(port),
+                Some(network) => self.insert(*port, network.clone()),
+            };
+        }
+    }
+}
+
 /// Represents a partial configuration of the gateway. All ports are listed,
 /// but those containing a `None` value did not change.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct GatewayConfigPartial(BTreeMap<u16, Option<NetworkState>>);
+
+impl GatewayConfigPartial {
+    pub fn into_inner(self) -> BTreeMap<u16, Option<NetworkState>> {
+        self.0
+    }
+}
 
 impl Deref for GatewayConfigPartial {
     type Target = BTreeMap<u16, Option<NetworkState>>;
