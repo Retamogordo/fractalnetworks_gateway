@@ -33,7 +33,7 @@ fn generate_config(size: usize, peers: Range<usize>) -> GatewayConfig {
     for _ in 0..size {
         let port = rng.gen_range(PORT_RANGE);
         let peers = rng.gen_range(peers.clone());
-        let mut address: IpNet = "10.0.0.1/8".parse().unwrap();
+        let address: IpNet = "10.0.0.1/8".parse().unwrap();
         let mut network = NetworkState {
             private_key: Privkey::generate(),
             listen_port: port,
@@ -95,13 +95,11 @@ async fn run_tests(websocket: &mut WebSocketStream<TcpStream>) -> Result<()> {
     let response = apply_config(websocket, Default::default()).await?;
     assert!(response.is_ok());
 
-    info!("Applying config with 10 networks");
-    let response = apply_config(websocket, generate_config(10, 0..3)).await?;
-    assert!(response.is_ok());
-
-    info!("Applying config with 100 networks");
-    let response = apply_config(websocket, generate_config(100, 0..3)).await?;
-    assert!(response.is_ok());
+    for _ in 0..10 {
+        info!("Applying config with 10 networks");
+        let response = apply_config(websocket, generate_config(10, 0..3)).await?;
+        assert!(response.is_ok());
+    }
 
     info!("Applying empty config");
     let response = apply_config(websocket, Default::default()).await?;
