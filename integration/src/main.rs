@@ -4,7 +4,7 @@ use gateway_client::*;
 use ipnet::{IpAdd, IpNet, Ipv4Net};
 use log::info;
 use networking_wrappers::*;
-use rand::{thread_rng, Rng};
+use rand::{prelude::SliceRandom, thread_rng, Rng};
 use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::ops::Range;
@@ -83,17 +83,24 @@ fn generate_config(
 }
 
 fn generate_partial_config(
-    size: usize,
+    add: usize,
+    remove: usize,
     peers: Range<usize>,
+    existing: Vec<u16>,
     peer_keys: &mut BTreeMap<Pubkey, Privkey>,
 ) -> GatewayConfigPartial {
     let mut config = GatewayConfigPartial::default();
 
-    for (port, network) in generate_config(size, peers, peer_keys)
+    for (port, network) in generate_config(add, peers, peer_keys)
         .into_inner()
         .into_iter()
     {
         config.insert(port, Some(network));
+    }
+
+    let mut rng = thread_rng();
+    for port in existing.choose_multiple(&mut rng, remove) {
+        config.insert(*port, None);
     }
 
     config
@@ -171,7 +178,24 @@ async fn run_tests(global: &Global, websocket: &mut WebSocketStream<TcpStream>) 
 
     for _ in 0..3 {
         info!("Applying partial config with 10 networks");
-        let partial_config = generate_partial_config(10, 0..3, &mut peer_keys);
+        let partial_config = generate_partial_config(10, 0, 0..3, vec![], &mut peer_keys);
+        config.apply_partial(&partial_config);
+        let response = apply_partial_config(websocket, partial_config).await?;
+        assert!(response.is_ok());
+
+        // make sure config is correct
+        verify_config(global, &config, &peer_keys).await?;
+    }
+
+    for _ in 0..3 {
+        info!("Applying partial config with 10 networks");
+        let partial_config = generate_partial_config(
+            0,
+            10,
+            0..3,
+            config.keys().cloned().collect(),
+            &mut peer_keys,
+        );
         config.apply_partial(&partial_config);
         let response = apply_partial_config(websocket, partial_config).await?;
         assert!(response.is_ok());
