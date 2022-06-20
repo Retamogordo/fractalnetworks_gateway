@@ -14,7 +14,7 @@ use wireguard_keys::{Privkey, Pubkey, Secret};
 /// This event is emitted on the gateway's event stream whenever a peer connects to a gateway.
 /// The gateway polls the wireguard interface's status periodically and emits this event whenever
 /// it detects a change.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct GatewayPeerConnectedEvent {
     pub network: Pubkey,
     pub peer: Pubkey,
@@ -25,14 +25,14 @@ pub struct GatewayPeerConnectedEvent {
 ///
 /// This event is emitted when the last packet received from the peer is older than the keepalive
 /// packet interval.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct GatewayPeerDisconnectedEvent {
     pub network: Pubkey,
     pub peer: Pubkey,
 }
 
 /// Peer endpoint has changed.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct GatewayPeerEndpointEvent {
     pub network: Pubkey,
     pub peer: Pubkey,
@@ -40,7 +40,7 @@ pub struct GatewayPeerEndpointEvent {
 }
 
 /// Gateway event types
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum GatewayEvent {
     PeerConnected(GatewayPeerConnectedEvent),
     PeerDisconnected(GatewayPeerDisconnectedEvent),
@@ -59,7 +59,7 @@ pub enum GatewayError {
 
 /// Represents the entire configuration state of the gateway.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct GatewayConfig(BTreeMap<u16, NetworkState>);
 
 impl Deref for GatewayConfig {
@@ -94,7 +94,7 @@ impl GatewayConfig {
 /// Represents a partial configuration of the gateway. All ports are listed,
 /// but those containing a `None` value did not change.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct GatewayConfigPartial(BTreeMap<u16, Option<NetworkState>>);
 
 impl GatewayConfigPartial {
@@ -123,7 +123,7 @@ fn default_mtu() -> usize {
 }
 
 /// Requests coming in for the gateway
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum GatewayRequest {
     /// Apply entire new config to gateway
     Apply(GatewayConfig),
@@ -134,7 +134,7 @@ pub enum GatewayRequest {
 }
 
 /// Responses sent back out by gateway
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum GatewayResponse {
     /// Send out traffic data
     Traffic(TrafficInfo),
@@ -146,7 +146,7 @@ pub enum GatewayResponse {
 
 /// Represents the configuration state of one particular WireGuard network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NetworkState {
     /// WireGuard private key
     pub private_key: Privkey,
@@ -166,7 +166,7 @@ pub struct NetworkState {
 
 /// Represents the configuration state of one particular peer of a WireGuard network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PeerState {
     /// Preshared key for this peer
     #[serde(default)]
@@ -179,7 +179,7 @@ pub struct PeerState {
 
 /// Represents a single traffic item, consisting of received and sent bytes.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Traffic {
     /// Received bytes
     pub rx: usize,
@@ -220,7 +220,7 @@ impl Traffic {
 
 /// Traffic data from the gateway for one particular time slice.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct TrafficInfo {
     /// Stat of time slice, as UNIX timestamp
     pub start_time: usize,
@@ -255,7 +255,7 @@ impl TrafficInfo {
 
 /// Traffic that occured within one particular network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NetworkTraffic {
     /// Total traffic occuring in this network.
     pub traffic: Traffic,
@@ -276,7 +276,7 @@ impl NetworkTraffic {
 
 /// Traffic occuring from one particular peer in the network.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DeviceTraffic {
     /// Total traffic from this peer
     pub traffic: Traffic,
