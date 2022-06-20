@@ -141,7 +141,7 @@ pub enum GatewayResponse {
     /// Send out events
     Event(GatewayEvent),
     /// Result for the last apply operation
-    Apply(Result<String, String>),
+    Apply(Result<(), Vec<String>>),
 }
 
 /// Represents the configuration state of one particular WireGuard network.
