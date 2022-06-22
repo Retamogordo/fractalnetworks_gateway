@@ -45,14 +45,14 @@ pub async fn connect_run(global: &Global) -> Result<()> {
                         match message {
                             GatewayRequest::Apply(config) => {
                                 let result = match crate::gateway::apply(global, &config).await {
-                                    Ok(()) => Ok("".to_string()),
+                                    Ok(()) => Ok(()),
                                     Err(e) => Err(e.to_string()),
                                 };
                                 socket.send(Message::Text(serde_json::to_string(&GatewayResponse::Apply(result))?)).await?;
                             },
                             GatewayRequest::ApplyPartial(config) => {
                                 let result = match crate::gateway::apply_partial(global, &config).await {
-                                    Ok(()) => Ok("".to_string()),
+                                    Ok(()) => Ok(()),
                                     Err(e) => Err(e.to_string()),
                                 };
                                 socket.send(Message::Text(serde_json::to_string(&GatewayResponse::Apply(result))?)).await?;
