@@ -109,7 +109,7 @@ fn generate_partial_config(
 async fn apply_config(
     websocket: &mut WebSocketStream<TcpStream>,
     config: GatewayConfig,
-) -> Result<Result<String, String>> {
+) -> Result<Result<(), String>> {
     websocket
         .send(Message::Text(serde_json::to_string(
             &GatewayRequest::Apply(config),
@@ -135,7 +135,7 @@ async fn apply_config(
 async fn apply_partial_config(
     websocket: &mut WebSocketStream<TcpStream>,
     config: GatewayConfigPartial,
-) -> Result<Result<String, String>> {
+) -> Result<Result<(), String>> {
     websocket
         .send(Message::Text(serde_json::to_string(
             &GatewayRequest::ApplyPartial(config),
