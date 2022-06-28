@@ -1,0 +1,20 @@
+[package]
+name = "gateway-client"
+authors = ["Patrick M. Elsen <patrick@fractalnetworks.co>"]
+description = "Gateway types"
+license = "AGPL-3.0-only"
+version = "0.1.1"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.38"
+ipnet = { version = "2.5.0", features = ["serde"] }
+serde = { version = "1.0.124", features = ["derive"] }
+thiserror = "1.0.30"
+url = { version = "2.2.1", features = ["serde"] }
+wireguard-keys = { version = "0.1" }
+schemars = { version = "0.8.8", optional = true }
+
+[features]
+default = []
+schema = ["schemars", "wireguard-keys/schema", "ipnet/schemars"]
