@@ -1,6 +1,6 @@
 use crate::gateway::BRIDGE_NET;
 use anyhow::{anyhow, Context};
-use gateway_client::{NetworkState, PeerState};
+use fractal_gateway_client::{NetworkState, PeerState};
 use ipnet::{IpAdd, IpNet, Ipv4Net};
 use itertools::Itertools;
 use log::*;

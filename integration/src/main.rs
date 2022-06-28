@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
+use fractal_gateway_client::*;
 use futures::{SinkExt, StreamExt};
-use gateway_client::*;
 use ipnet::{IpAdd, IpNet, Ipv4Net};
 use log::info;
 use networking_wrappers::*;
@@ -13,7 +13,7 @@ use structopt::StructOpt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::process::Command;
 use tokio_tungstenite::{accept_async, tungstenite::protocol::Message, WebSocketStream};
-use wireguard_keys::{Privkey, Pubkey, Secret};
+use wireguard_keys::{Privkey, Pubkey};
 
 #[derive(StructOpt, Clone, Debug)]
 pub struct Options {

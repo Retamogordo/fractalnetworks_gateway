@@ -179,7 +179,9 @@ pub struct PeerState {
 
 /// Represents a single traffic item, consisting of received and sent bytes.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd,
+)]
 pub struct Traffic {
     /// Received bytes
     pub rx: usize,

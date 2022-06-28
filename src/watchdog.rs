@@ -1,10 +1,10 @@
 use crate::types::NETNS_PREFIX;
 use crate::Global;
 use anyhow::{Context, Result};
-use gateway_client::{
-    GatewayEvent, GatewayPeerConnectedEvent, GatewayPeerDisconnectedEvent, GatewayPeerEndpointEvent,
+use fractal_gateway_client::{
+    GatewayEvent, GatewayPeerConnectedEvent, GatewayPeerDisconnectedEvent,
+    GatewayPeerEndpointEvent, Traffic, TrafficInfo,
 };
-use gateway_client::{Traffic, TrafficInfo};
 use log::*;
 use networking_wrappers::*;
 use std::collections::{BTreeMap, HashSet};

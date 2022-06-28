@@ -2,7 +2,7 @@
 name = "fractal-gateway"
 authors = ["Patrick M. Elsen <patrick@fractalnetworks.co"]
 license = "AGPL-3.0-only"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
@@ -20,7 +20,7 @@ lazy_static = "1.4.0"
 tera = "1.15.0"
 futures = "0.3.21"
 url = { version = "2.2.2", features = ["serde"] }
-gateway-client = { path = "./client" }
+fractal-gateway-client = { path = "./client" }
 networking-wrappers = { git = "https://gitlab.com/fractalnetworks/networking-wrappers", branch = "main" }
 wireguard-keys = "0.1"
 regex = "1.5.4"

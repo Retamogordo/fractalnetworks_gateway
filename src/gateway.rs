@@ -3,7 +3,7 @@ use crate::Global;
 use crate::Options;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
-use gateway_client::{GatewayConfig, GatewayConfigPartial, NetworkState};
+use fractal_gateway_client::{GatewayConfig, GatewayConfigPartial, NetworkState};
 use ipnet::{IpNet, Ipv4Net};
 use lazy_static::lazy_static;
 use log::*;

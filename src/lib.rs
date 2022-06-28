@@ -28,9 +28,7 @@ pub mod websocket;
 
 use anyhow::{anyhow, Context, Result};
 use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector};
-use gateway_client::GatewayConfig;
-use gateway_client::GatewayEvent;
-use gateway_client::TrafficInfo;
+use fractal_gateway_client::{GatewayConfig, GatewayEvent, TrafficInfo};
 use humantime::parse_duration;
 use std::net::SocketAddr;
 use std::str::FromStr;

@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1.0.57"
 env_logger = "0.9.0"
 futures = "0.3.21"
-gateway-client = { git = "https://gitlab.com/fractalnetworks/gateway-client" }
+fractal-gateway-client = { path = "../client" }
 ipnet = "2.5.0"
 log = "0.4.17"
 networking-wrappers = { git = "https://gitlab.com/fractalnetworks/networking-wrappers", branch = "main" }

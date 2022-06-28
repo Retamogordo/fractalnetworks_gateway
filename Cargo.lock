@@ -399,15 +399,15 @@ dependencies = [
 
 [[package]]
 name = "fractal-gateway"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-tungstenite",
  "base32",
  "env_logger",
  "event-types",
+ "fractal-gateway-client",
  "futures",
- "gateway-client 0.1.1",
  "humantime",
  "ipnet",
  "itertools",
@@ -427,13 +427,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "fractal-gateway-client"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "ipnet",
+ "schemars",
+ "serde",
+ "thiserror",
+ "url",
+ "wireguard-keys",
+]
+
+[[package]]
 name = "fractal-gateway-integration"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "env_logger",
+ "fractal-gateway-client",
  "futures",
- "gateway-client 0.1.1 (git+https://gitlab.com/fractalnetworks/gateway-client)",
  "ipnet",
  "log",
  "networking-wrappers",
@@ -532,32 +545,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "gateway-client"
-version = "0.1.1"
-dependencies = [
- "anyhow",
- "ipnet",
- "schemars",
- "serde",
- "thiserror",
- "url",
- "wireguard-keys",
-]
-
-[[package]]
-name = "gateway-client"
-version = "0.1.1"
-source = "git+https://gitlab.com/fractalnetworks/gateway-client#d4800e28f8e00cf8ef0e6dd27f0ad774af7e2f34"
-dependencies = [
- "anyhow",
- "ipnet",
- "serde",
- "thiserror",
- "url",
- "wireguard-keys",
 ]
 
 [[package]]
