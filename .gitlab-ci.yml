@@ -21,7 +21,7 @@ check-formatting:
   allow_failure: true
   script:
     - source ci-setup-cargo
-    - cargo fmt -- --check
+    - cargo fmt --all -- --check
   interruptible: true
 
 # make sure there are no issues with the code.
@@ -31,7 +31,7 @@ check-mistakes:
   allow_failure: true
   script:
     - source ci-setup-cargo
-    - cargo clippy
+    - cargo clippy --all
   interruptible: true
 
 # when pushing a tag, make sure that the tag version
@@ -41,6 +41,7 @@ check-version:
   stage: test
   script:
     - test $(sed -rn 's/^version = "(.+)"/v\1/p' Cargo.toml | head -n 1) = "$CI_COMMIT_TAG"
+    - test $(sed -rn 's/^version = "(.+)"/v\1/p' client/Cargo.toml | head -n 1) = "$CI_COMMIT_TAG"
   rules:
     - if: $CI_COMMIT_TAG
 
@@ -50,7 +51,7 @@ test:
   stage: test
   script:
     - source ci-setup-cargo
-    - cargo test
+    - cargo test --all
   interruptible: true
 
 # generate release build
