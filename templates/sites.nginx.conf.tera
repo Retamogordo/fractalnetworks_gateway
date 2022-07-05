@@ -10,7 +10,7 @@ upstream {{ upstream }} {
 server {
   server_name {{ domain }};
   listen 80;
-  listen [::]:80;
+  #listen [::]:80 ipv6only=off;
 
   location / {
     proxy_set_header Host $host;
