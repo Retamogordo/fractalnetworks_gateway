@@ -360,7 +360,7 @@ dependencies = [
 [[package]]
 name = "event-types"
 version = "0.1.0"
-source = "git+https://gitlab.com/fractalnetworks/event-types?branch=v0.1#b0548f73a778c43c5c9bb186c42083539ff0c3e4"
+source = "git+https://gitlab.com/fractalnetworks/libraries/event-types?branch=v0.1#b0548f73a778c43c5c9bb186c42083539ff0c3e4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -413,7 +413,7 @@ dependencies = [
  "itertools",
  "lazy_static",
  "log",
- "networking-wrappers",
+ "networking-wrappers 0.1.0 (git+https://gitlab.com/fractalnetworks/libraries/networking-wrappers?branch=main)",
  "rand",
  "regex",
  "serde",
@@ -449,7 +449,7 @@ dependencies = [
  "futures",
  "ipnet",
  "log",
- "networking-wrappers",
+ "networking-wrappers 0.1.0 (git+https://gitlab.com/fractalnetworks/networking-wrappers?branch=main)",
  "rand",
  "serde_json",
  "structopt",
@@ -776,6 +776,20 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys",
+]
+
+[[package]]
+name = "networking-wrappers"
+version = "0.1.0"
+source = "git+https://gitlab.com/fractalnetworks/libraries/networking-wrappers?branch=main#77f02bb6cd01eb4fb63fcf7807672652e15c8847"
+dependencies = [
+ "anyhow",
+ "ipnet",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+ "wireguard-keys",
 ]
 
 [[package]]
