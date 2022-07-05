@@ -63,8 +63,8 @@ build:amd64:
     - cargo build --release --all
   artifacts:
     paths:
-      - target/release/$RUST_BINARY
-      - target/release/$RUST_BINARY-integration
+      - target/release/fractal-gateway
+      - target/release/fractal-gateway-integration
     expire_in: 1 week
   interruptible: true
 
@@ -77,7 +77,7 @@ build:arm32:
     - cargo build --release --target arm-unknown-linux-gnueabihf
   artifacts:
     paths:
-      - target/arm-unknown-linux-gnueabihf/release/$RUST_BINARY
+      - target/arm-unknown-linux-gnueabihf/release/fractal-gateway
     expire_in: 1 week
   interruptible: true
 
@@ -90,7 +90,7 @@ build:arm64:
     - cargo build --release --target aarch64-unknown-linux-gnu
   artifacts:
     paths:
-      - target/aarch64-unknown-linux-gnu/release/$RUST_BINARY
+      - target/aarch64-unknown-linux-gnu/release/fractal-gateway
     expire_in: 1 week
   interruptible: true
 
