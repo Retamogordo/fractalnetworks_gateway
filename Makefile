@@ -1,6 +1,6 @@
 CARGO=cargo
 DOCKER=docker
-IMAGE_NAME=registry.gitlab.com/fractalnetworks/gateway
+IMAGE_NAME=registry.gitlab.com/fractalnetworks/services/gateway
 IMAGE_TAG=local
 ARCH=amd64
 BUILD_TYPE=debug
