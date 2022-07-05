@@ -1,4 +1,4 @@
-FROM debian:testing
+FROM debian:11
 
 ARG BUILD_TYPE=release
 ENV RUST_LOG=info

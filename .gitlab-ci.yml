@@ -109,9 +109,11 @@ rustdoc:
 
 # build docker image
 docker:
+  image: registry.gitlab.com/fractalnetworks/images/docker:v1
+  tags:
+    - ipv6:on
   dependencies:
     - build:amd64
-  image: registry.gitlab.com/fractalnetworks/images/docker:v1
   stage: publish
   services:
     - docker:dind
