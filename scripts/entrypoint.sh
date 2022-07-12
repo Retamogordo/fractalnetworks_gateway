@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# clear out any existing namespaces
+ip -all netns delete
+
 # launch NGINX
 nginx &
 
