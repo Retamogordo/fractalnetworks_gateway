@@ -50,25 +50,25 @@ const BROADCAST_QUEUE_EVENTS: usize = 16;
 pub struct Options {
     /// Security token used to authenticate API requests.
     #[structopt(long, short, env = "GATEWAY_TOKEN")]
-    token: String,
+    pub token: String,
 
     /// Interval to run watchdog at.
     #[structopt(long, short, default_value="60s", parse(try_from_str = parse_duration))]
-    watchdog: Duration,
+    pub watchdog: Duration,
 
     /// Add custom HTTPS forwarding
     #[structopt(long, env = "GATEWAY_CUSTOM_FORWARDING", parse(try_from_str = parse_custom_forwarding), use_delimiter = true)]
-    custom_forwarding: Vec<(Url, SocketAddr)>,
+    pub custom_forwarding: Vec<(Url, SocketAddr)>,
 
     /// Where to connect to get the manager
     #[structopt(long, short, env = "GATEWAY_MANAGER")]
-    manager: Url,
+    pub manager: Url,
 
     /// Name of this gateway. Passed on to manager as part of a HTTP
     /// header. This is used so that a single account can host multiple
     /// gateways.
     #[structopt(long, short, env = "GATEWAY_IDENTITY")]
-    identity: String,
+    pub identity: String,
 }
 
 impl Options {
