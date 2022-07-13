@@ -71,6 +71,32 @@ pub struct Options {
     identity: String,
 }
 
+impl Options {
+    pub async fn run(&self) -> Result<()> {
+        // log name and version on startup.
+        log::info!(
+            "Starting {}, version {}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
+        );
+
+        let global = self.global().await.context("Creating global options")?;
+
+        global.watchdog().await;
+
+        // on startup, initialize nginx and set some default options (such as
+        // special redirects passed in on the command line).
+        gateway::startup(&self)
+            .await
+            .context("Starting up gateway")?;
+
+        // connect to the websocket to get config from manager and send events
+        // and traffic data
+        websocket::connect(global).await;
+        Ok(())
+    }
+}
+
 /// Given a forwarding scheme like `https://domain.com=127.0.0.1:8000`, parse it
 /// into URL and SocketAddr.
 fn parse_custom_forwarding(text: &str) -> Result<(Url, SocketAddr)> {
