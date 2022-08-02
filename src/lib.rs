@@ -27,7 +27,6 @@ pub mod watchdog;
 pub mod websocket;
 
 use anyhow::{anyhow, Context, Result};
-use event_types::{broadcast::BroadcastEmitter, emitter::EventCollector};
 use fractal_gateway_client::{GatewayConfig, GatewayEvent, TrafficInfo};
 use humantime::parse_duration;
 use std::net::SocketAddr;
@@ -95,6 +94,27 @@ impl Options {
         websocket::connect(global).await;
         Ok(())
     }
+
+    pub async fn global(&self) -> Result<Global> {
+        // set up resilient traffic event emitter
+        let (traffic_broadcast, _) = channel(BROADCAST_QUEUE_TRAFFIC);
+
+        // set up resilient event emitter
+        let (events_broadcast, _) = channel(BROADCAST_QUEUE_EVENTS);
+
+        let global = Global {
+            lock: Arc::new(Mutex::new(Default::default())),
+            iptables_lock: Arc::new(Mutex::new(())),
+            options: self.clone(),
+            watchdog: self.watchdog,
+            traffic_broadcast,
+            events_broadcast,
+            token: self.token.clone(),
+            manager: self.manager.clone(),
+        };
+
+        Ok(global)
+    }
 }
 
 /// Given a forwarding scheme like `https://domain.com=127.0.0.1:8000`, parse it
@@ -128,13 +148,9 @@ pub struct Global {
     /// The watchdog process runs on intervals and polls wireguard traffic and peer
     /// statistics and turns them into events.
     watchdog: Duration,
-    /// Traffic Stream.
-    traffic: EventCollector<TrafficInfo>,
     /// Broadcast queue for sending traffic data.
     traffic_broadcast: Sender<TrafficInfo>,
     /// Events stream for gateway. These events are sent out on the gRPC socket.
-    events: EventCollector<GatewayEvent>,
-    /// Underlying channel that events are sent on.
     events_broadcast: Sender<GatewayEvent>,
     /// JWT or ApiKey used to connect to manager.
     token: String,
@@ -148,7 +164,8 @@ impl Global {
     }
 
     pub async fn event(&self, event: &GatewayEvent) -> Result<()> {
-        self.events.event(event).await
+        self.events_broadcast.send(event.clone())?;
+        Ok(())
     }
 
     pub fn iptables_lock(&self) -> &Mutex<()> {
@@ -171,34 +188,5 @@ impl Global {
                 }
             }
         });
-    }
-}
-
-impl Options {
-    pub async fn global(&self) -> Result<Global> {
-        // set up resilient traffic event emitter
-        let (traffic_broadcast, _) = channel(BROADCAST_QUEUE_TRAFFIC);
-        let mut traffic = EventCollector::new();
-        traffic.emitter(BroadcastEmitter::new(traffic_broadcast.clone()));
-
-        // set up resilient event emitter
-        let (events_broadcast, _) = channel(BROADCAST_QUEUE_EVENTS);
-        let mut events = EventCollector::new();
-        events.emitter(BroadcastEmitter::new(events_broadcast.clone()));
-
-        let global = Global {
-            lock: Arc::new(Mutex::new(Default::default())),
-            iptables_lock: Arc::new(Mutex::new(())),
-            options: self.clone(),
-            watchdog: self.watchdog,
-            traffic,
-            traffic_broadcast,
-            events,
-            events_broadcast,
-            token: self.token.clone(),
-            manager: self.manager.clone(),
-        };
-
-        Ok(global)
     }
 }
