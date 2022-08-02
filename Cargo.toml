@@ -21,7 +21,7 @@ tera = "1.16.0"
 futures = "0.3.21"
 url = { version = "2.2.2", features = ["serde"] }
 fractal-gateway-client = { path = "./client" }
-networking-wrappers = { git = "https://gitlab.com/fractalnetworks/libraries/networking-wrappers", branch = "main" }
+fractal-networking-wrappers = "0.1"
 wireguard-keys = "0.1.1"
 regex = "1.6.0"
 event-types = { git = "https://gitlab.com/fractalnetworks/libraries/event-types", features = ["broadcast"], branch = "v0.1" }

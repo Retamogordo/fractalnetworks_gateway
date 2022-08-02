@@ -5,8 +5,8 @@ use fractal_gateway_client::{
     GatewayEvent, GatewayPeerConnectedEvent, GatewayPeerDisconnectedEvent,
     GatewayPeerEndpointEvent, Traffic, TrafficInfo,
 };
+use fractal_networking_wrappers::*;
 use log::*;
-use networking_wrappers::*;
 use std::collections::{BTreeMap, HashSet};
 use std::time::SystemTime;
 use wireguard_keys::Pubkey;

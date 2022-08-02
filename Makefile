@@ -4,6 +4,10 @@ IMAGE_NAME=registry.gitlab.com/fractalnetworks/services/gateway
 IMAGE_TAG=local
 ARCH=amd64
 BUILD_TYPE=debug
+DOCKER_WRAPPER=$(DOCKER) run -it --rm -v $(shell pwd):/code --workdir /code --user $(shell id -u):$(shell id -g) -e HOME=/home/user -v $(HOME):/home/user -e CARGO_HOME=/home/user/.cargo registry.gitlab.com/fractalnetworks/images/rust-stable-amd64:v1
+
+build:
+	$(DOCKER_WRAPPER) cargo build --offline
 
 # build in release mode
 target/release/fractal-gateway:

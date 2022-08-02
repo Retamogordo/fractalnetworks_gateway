@@ -10,7 +10,7 @@ futures = "0.3.21"
 fractal-gateway-client = { path = "../client" }
 ipnet = "2.5.0"
 log = "0.4.17"
-networking-wrappers = { git = "https://gitlab.com/fractalnetworks/networking-wrappers", branch = "main" }
+fractal-networking-wrappers = "0.1"
 rand = "0.8.5"
 serde_json = "1.0.81"
 structopt = "0.3.26"
