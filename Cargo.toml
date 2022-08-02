@@ -4,6 +4,8 @@ authors = ["Patrick M. Elsen <patrick@fractalnetworks.co"]
 license = "AGPL-3.0-only"
 version = "0.2.0"
 edition = "2021"
+repository = "https://github.com/fractalnetworksco/gateway"
+description = "WireGuard gateway service with NGINX-based SNI for portable connectivity."
 
 [dependencies]
 tokio = { version = "1.20.0", features = ["process", "sync", "macros", "rt-multi-thread", "fs", "time"] }

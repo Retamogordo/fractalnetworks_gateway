@@ -1,10 +1,11 @@
 [package]
 name = "fractal-gateway-client"
 authors = ["Patrick M. Elsen <patrick@fractalnetworks.co>"]
-description = "Gateway types"
+description = "Client library for fractal-gateway"
 license = "AGPL-3.0-only"
 version = "0.2.0"
 edition = "2021"
+repository = "https://github.com/fractalnetworksco/gateway"
 
 [dependencies]
 anyhow = "1.0.58"

@@ -7,7 +7,7 @@ BUILD_TYPE=debug
 DOCKER_WRAPPER=$(DOCKER) run -it --rm -v $(shell pwd):/code --workdir /code --user $(shell id -u):$(shell id -g) -e HOME=/home/user -v $(HOME):/home/user -e CARGO_HOME=/home/user/.cargo registry.gitlab.com/fractalnetworks/images/rust-stable-amd64:v1
 
 build:
-	$(DOCKER_WRAPPER) cargo build --offline
+	$(DOCKER_WRAPPER) cargo build
 
 # build in release mode
 target/release/fractal-gateway:
@@ -46,11 +46,5 @@ docker-run:
 integration: docker
 	$(CARGO) build --package fractal-gateway-integration --release
 	cd integration && docker-compose --env-file local.env up --build --force-recreate
-
-get-release-artifact:
-	./scripts/get-release-artifact.sh $(ARCH)
-
-setup-git:
-	git config --global url."ssh://git@gitlab.com".insteadOf "https://gitlab.com"
 
 .PHONY: target/debug/fractal-gateway target/release/fractal-gateway
