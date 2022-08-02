@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Result};
 use fractal_gateway_client::*;
+use fractal_networking_wrappers::*;
 use futures::{SinkExt, StreamExt};
 use ipnet::{IpAdd, IpNet, Ipv4Net};
 use log::info;
-use networking_wrappers::*;
 use rand::{prelude::SliceRandom, thread_rng, Rng};
 use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
